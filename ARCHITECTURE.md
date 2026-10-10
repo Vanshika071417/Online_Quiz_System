@@ -69,14 +69,12 @@ graph TD
 
 ## 3. Recommended Technology Stack
 
-| Layer | Recommended Choice | Alternative Options | Rationale |
-|---|---|---|---|
-| **Cross-Platform Client (Desktop & Mobile)** | **Flutter (Dart)** | React Native (Mobile) + Tauri / Electron (Desktop) | Single codebase that compiles natively to Android, iOS, Windows, macOS, and Linux with 60/120fps performance and uniform UI. |
-| **Backend Framework** | **Node.js (NestJS / Express)** or **Go (Gin)** / **Python (FastAPI)** | Spring Boot, ASP.NET Core | Fast asynchronous I/O, excellent WebSocket support for real-time exam countdowns and event streaming. |
-| **Real-time Engine** | **Socket.IO / WebSockets** | Firebase Realtime, gRPC | Sub-second sync for live timers, answer submission sync, and proctor events. |
-| **Primary Database** | **PostgreSQL** | MongoDB, MySQL | Relational integrity for user data, quiz schemas, submissions, transactions, and JSONB flexibility. |
-| **Cache & Real-time State** | **Redis** | Memcached, Dragonfly | Session storage, active countdowns, leaderboard rankings (Sorted Sets), rate limiting. |
-| **File / Media Storage** | **AWS S3 / Cloudflare R2 / Supabase Storage** | MinIO (Self-hosted) | Question media (diagrams, audio, code files) and optional proctor snapshots. |
+| Layer | Selected Architecture | Implementation Details |
+|---|---|---|
+| **Client UI (Desktop & Mobile)** | **Responsive Progressive Web App (PWA)** | Built with semantic HTML5, modern vanilla CSS3 (design tokens, glassmorphism, micro-animations), and modular ES6 JavaScript. Fully installable as a standalone app on Windows, macOS, Android, and iOS. |
+| **Backend & Real-Time Sync** | **Firebase / Supabase** | Real-time database, Firestore/PostgreSQL, authentication, and live presence/session synchronization with offline-first local persistence. |
+| **State & Storage Engine** | **Dual Engine (Cloud + Local)** | Active test state, question responses, and countdown timer are mirrored in local storage and synced with Firebase in real time for resilience against network loss. |
+| **Security & Proctoring** | **Browser Event Monitor** | Fullscreen API lockdown, Page Visibility API (`visibilitychange`), window blur/focus tracking, and clipboard restriction. |
 
 ---
 

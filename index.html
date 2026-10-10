@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0e17">
+  <meta name="description" content="Next-generation multi-platform online quiz and examination system for Desktop and Mobile.">
+  <title>Online Quiz System — Secure Multi-Platform Assessment</title>
+  
+  <!-- Web Manifest for PWA -->
+  <link rel="manifest" href="./manifest.json">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="./assets/css/variables.css">
+  <link rel="stylesheet" href="./assets/css/main.css">
+  <link rel="stylesheet" href="./assets/css/components.css">
+  <link rel="stylesheet" href="./assets/css/examiner.css">
+  <link rel="stylesheet" href="./assets/css/quiz-taker.css">
+</head>
+<body>
+
+  <!-- Ambient Light Orbs -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="app-nav">
+    <div class="brand-wrapper" onclick="switchView('student-lobby')">
+      <div class="brand-logo-icon">⚡</div>
+      <span class="brand-title">QuizSphere</span>
+      <span class="brand-badge">Pro 2.0</span>
+    </div>
+
+    <div class="nav-controls">
+      <!-- Role Switcher Tabs -->
+      <div class="role-switcher">
+        <button id="tabBtnStudent" class="role-tab-btn active" onclick="switchView('student-lobby')">
+          <span>🎓</span><span class="tab-text">Candidate Arena</span>
+        </button>
+        <button id="tabBtnExaminer" class="role-tab-btn" onclick="switchView('examiner'); examinerStudio.init();">
+          <span>🛠️</span><span class="tab-text">Examiner Studio</span>
+        </button>
+      </div>
+
+      <!-- Cloud Sync Button -->
+      <button class="btn btn-secondary btn-sm" onclick="openCloudSettingsModal()" title="Firebase / Supabase Cloud Settings">
+        <span>☁️</span><span class="tab-text">Cloud Sync</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Views Container -->
+  <main class="main-content">
+
+    <!-- 1. STUDENT LOBBY / CATALOG VIEW -->
+    <section id="view-student-lobby" class="view-section active">
+      <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge badge-cyan" style="margin-bottom: 0.5rem;">Cross-Platform Assessment Engine</span>
+          <h1 style="font-size: 2.25rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Explore Available Quizzes</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">Select an assessment to begin your timed, proctored evaluation.</p>
+        </div>
+
+        <div style="width: 100%; max-width: 360px;">
+          <input type="text" id="quizSearchInput" class="form-input" placeholder="🔍 Search assessments or topics...">
+        </div>
+      </div>
+
+      <div id="studentQuizCatalog" class="quiz-catalog-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+
+    <!-- 2. LIVE EXAM ARENA -->
+    <section id="view-exam-arena" class="view-section">
+      <!-- Anti-Cheat Violation Banner -->
+      <div id="cheatAlertBanner" class="cheat-alert-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.5rem;">⚠️</span>
+          <div>
+            <strong>Anti-Cheat Security Alert:</strong>
+            <span style="font-size: 0.85rem; opacity: 0.9;">Window blur or app-switch detected. Proctor violation count: <span id="cheatViolationCount" style="font-weight: 800;">0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exam Header -->
+      <div class="exam-header-bar">
+        <div class="exam-quiz-title">
+          <span>📝</span>
+          <span id="examHeaderQuizTitle">Examination in Progress</span>
+        </div>
+
+        <div id="examTimerBox" class="exam-timer-box">
+          <span style="font-size: 1.1rem;">⏱️</span>
+          <span id="examTimerText" class="timer-digits">00:00</span>
+        </div>
+      </div>
+
+      <div class="exam-arena">
+        <!-- Main Question Area -->
+        <div>
+          <div class="card question-card">
+            <div class="question-meta-bar">
+              <span id="questionIndexLabel" class="badge badge-indigo">Question 1</span>
+              <button id="markReviewBtn" class="btn btn-secondary btn-sm" onclick="quizEngine.toggleReviewFlag()">
+                ☆ Mark for Review
+              </button>
+            </div>
+
+            <div id="questionPrompt" class="question-prompt">
+              <!-- Question Text -->
+            </div>
+
+            <pre id="questionCodeContainer" class="question-code-snippet" style="display: none;"></pre>
+
+            <div id="optionsList" class="options-list">
+              <!-- Rendered options -->
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Toolbar -->
+          <div class="exam-action-bar">
+            <button id="prevQuestionBtn" class="btn btn-secondary" onclick="quizEngine.navigate(-1)">
+              ← Previous
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="quizEngine.openSubmitConfirmModal()">
+              Finish Early
+            </button>
+            <button id="nextQuestionBtn" class="btn btn-primary" onclick="quizEngine.navigate(1)">
+              Next Question →
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Palette Sidebar -->
+        <div>
+          <div class="card palette-card">
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: #ffffff;">Question Matrix</h4>
+            <div class="palette-legend">
+              <div class="legend-item"><span class="legend-dot answered"></span> Answered</div>
+              <div class="legend-item"><span class="legend-dot unanswered"></span> Unattempted</div>
+              <div class="legend-item"><span class="legend-dot review"></span> For Review</div>
+              <div class="legend-item"><span class="legend-dot current"></span> Current</div>
+            </div>
+
+            <div id="paletteGrid" class="palette-grid">
+              <!-- Number buttons -->
+            </div>
+
+            <button class="btn btn-cyan" style="width: 100%;" onclick="quizEngine.openSubmitConfirmModal()">
+              Submit Assessment ✔️
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- 3. SCORECARD & RESULTS VIEW -->
+    <section id="view-result" class="view-section">
+      <div class="result-container">
+        <div class="card score-hero-card">
+          <span id="resultStatusBadge" class="badge badge-success" style="font-size: 0.85rem; padding: 0.35rem 0.9rem; margin-bottom: 1.25rem;">
+            PASSED
+          </span>
+          <h2 style="font-size: 1.85rem; color: #ffffff; margin-bottom: 0.25rem;" id="resultQuizTitle">Assessment Title</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Candidate: <strong id="resultCandidateName" style="color: var(--accent-cyan);">Piyush</strong>
+          </p>
+
+          <!-- Circular Score Gauge -->
+          <div class="gauge-wrapper">
+            <svg class="gauge-svg" width="160" height="160" viewBox="0 0 160 160">
+              <circle class="gauge-bg" cx="80" cy="80" r="64"></circle>
+              <circle id="resultGaugeCircle" class="gauge-fill" cx="80" cy="80" r="64"></circle>
+            </svg>
+            <div id="resultPercentageNumber" class="gauge-percentage">0%</div>
+          </div>
+
+          <!-- Stats Breakdown -->
+          <div class="result-stats-row">
+            <div class="card" style="padding: 1rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Score</div>
+              <div id="resultCorrectQuestions" style="font-size: 1.35rem; font-weight: 700; color: #ffffff;">0 / 0</div>
+            </div>
+            <div class="card" style="padding: 1rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Passing Criteria</div>
+              <div style="font-size: 1.35rem; font-weight: 700; color: var(--accent-cyan);">Verified</div>
+            </div>
+            <div class="card" style="padding: 1rem;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Proctor Violations</div>
+              <div id="resultViolations" style="font-size: 1.35rem; font-weight: 700; color: #fca5a5;">0</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-cyan" onclick="generateCertificate(document.getElementById('resultCandidateName').textContent, document.getElementById('resultQuizTitle').textContent, parseInt(document.getElementById('resultPercentageNumber').textContent, 10))">
+              📜 Download Certificate
+            </button>
+            <button class="btn btn-secondary" onclick="switchView('student-lobby'); renderStudentCatalog();">
+              Back to Catalog
+            </button>
+          </div>
+        </div>
+
+        <!-- Detailed Explanations Breakdown -->
+        <div style="margin-top: 2rem;">
+          <h3 style="font-size: 1.3rem; margin-bottom: 1rem; color: #ffffff;">Detailed Review & Explanations</h3>
+          <div id="answerReviewList">
+            <!-- Rendered by quizEngine -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- 4. EXAMINER STUDIO DASHBOARD -->
+    <section id="view-examiner" class="view-section">
+      <div class="examiner-dashboard">
+        <div class="examiner-header">
+          <div>
+            <span class="badge badge-indigo" style="margin-bottom: 0.5rem;">Examiner Workspace</span>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: #ffffff;">Quiz & Question Studio</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Build quizzes, customize question banks, and analyze candidate metrics.</p>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="examinerStudio.openCreateQuizModal()">
+              + Create New Quiz
+            </button>
+            <label class="btn btn-secondary" style="margin: 0; cursor: pointer;">
+              📂 Import JSON
+              <input type="file" accept=".json" style="display: none;" onchange="examinerStudio.importQuiz(this.files[0])">
+            </label>
+          </div>
+        </div>
+
+        <!-- Summary Stat Cards -->
+        <div class="examiner-stats-grid">
+          <div class="card stat-card">
+            <div class="stat-icon cyan">📚</div>
+            <div class="stat-info">
+              <div id="statTotalQuizzes" class="stat-value">0</div>
+              <div class="stat-label">Active Quizzes</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon indigo">❓</div>
+            <div class="stat-info">
+              <div id="statTotalQuestions" class="stat-value">0</div>
+              <div class="stat-label">Total Questions</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon purple">👥</div>
+            <div class="stat-info">
+              <div id="statTotalAttempts" class="stat-value">0</div>
+              <div class="stat-label">Candidate Submissions</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon emerald">📈</div>
+            <div class="stat-info">
+              <div id="statPassRate" class="stat-value">0%</div>
+              <div class="stat-label">Avg Pass Rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Management Catalog -->
+        <div>
+          <h2 style="font-size: 1.35rem; margin-bottom: 1rem; color: #ffffff;">Manage Question Banks</h2>
+          <div id="examinerQuizList" class="examiner-quizzes-grid">
+            <!-- Rendered by examiner.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- 5. QUIZ BUILDER VIEW -->
+    <section id="view-builder" class="view-section">
+      <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge badge-cyan">Visual Assessment Builder</span>
+          <h2 style="font-size: 1.75rem; color: #ffffff;">Edit Quiz & Questions</h2>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="switchView('examiner')">Cancel</button>
+          <button class="btn btn-primary" onclick="examinerStudio.saveFullQuiz()">💾 Save Assessment</button>
+        </div>
+      </div>
+
+      <!-- Quiz General Settings Panel -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #ffffff;">Assessment Details</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Quiz Title</label>
+            <input type="text" id="builderQuizTitle" class="form-input" placeholder="e.g. Algorithms & Complexity">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <input type="text" id="builderCategory" class="form-input" placeholder="e.g. Computer Science">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (Minutes)</label>
+            <input type="number" id="builderDuration" class="form-input" value="15" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Passing Score (%)</label>
+            <input type="number" id="builderPassing" class="form-input" value="70" min="1" max="100">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Description / Instructions</label>
+          <textarea id="builderDescription" class="form-textarea" placeholder="Provide test overview, instructions, or rules..."></textarea>
+        </div>
+      </div>
+
+      <!-- Two-Column Question Builder -->
+      <div class="builder-layout">
+        <!-- Left: Question List -->
+        <div class="builder-sidebar">
+          <div class="card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+              <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">Questions</span>
+              <button class="btn btn-cyan btn-sm" onclick="examinerStudio.addNewQuestion()">+ Add</button>
+            </div>
+            <div id="builderQuestionList" class="question-list-scroll">
+              <!-- Rendered items -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Active Question Form -->
+        <div class="card question-form-panel">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h4 style="font-size: 1.1rem; color: #ffffff;">Editing Question #<span id="builderCurrentQNum">1</span></h4>
+            <span class="badge badge-indigo">Single Choice</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Question Text</label>
+            <textarea id="builderQuestionPrompt" class="form-textarea" placeholder="Type the question prompt here..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Code Snippet (Optional)</label>
+            <textarea id="builderQuestionCode" class="form-textarea" style="font-family: var(--font-mono); font-size: 0.85rem;" placeholder="Paste code example if applicable..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Options (Select the radio of the correct answer):</label>
+            <div id="builderOptionsContainer">
+              <!-- Options populated by JS -->
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Explanation</label>
+            <textarea id="builderExplanation" class="form-textarea" placeholder="Explain why the chosen answer is correct for candidate review..."></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- MODALS -->
+
+  <!-- 1. Start Assessment Modal -->
+  <div id="startExamModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Assessment Readiness Check</h3>
+        <button class="modal-close" onclick="closeStartExamModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <h4 id="startModalQuizTitle" style="font-size: 1.25rem; color: #ffffff; margin-bottom: 0.5rem;">Title</h4>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted);">
+          <span>⏱️ Duration: <strong id="startModalDuration" style="color: #fff;">15m</strong></span>
+          <span>❓ Questions: <strong id="startModalQuestions" style="color: #fff;">10</strong></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Enter Candidate Name</label>
+          <input type="text" id="candidateNameInput" class="form-input" placeholder="e.g. Piyush Bhatt" value="Candidate">
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <h5 style="color: #ffffff; margin-bottom: 0.5rem; font-size: 0.9rem;">🛡️ Proctoring & Security Rules</h5>
+          <ul style="font-size: 0.825rem; color: var(--text-muted); padding-left: 1.2rem; line-height: 1.6;">
+            <li>Do not switch browser tabs or minimize the window during the exam.</li>
+            <li>Anti-cheat tracking monitors blur events and records violations.</li>
+            <li>Once submitted, answers are graded instantaneously.</li>
+          </ul>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.875rem; color: var(--text-main); cursor: pointer;">
+          <input type="checkbox" id="fullscreenCheckbox" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+          Enable Fullscreen Mode for optimal test environment
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeStartExamModal()">Cancel</button>
+        <button class="btn btn-cyan" onclick="confirmAndBeginExam()">Start Assessment Now ⚡</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 2. Submit Confirmation Modal -->
+  <div id="submitConfirmModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Ready to Submit?</h3>
+        <button class="modal-close" onclick="quizEngine.closeSubmitConfirmModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); margin-bottom: 1.25rem;">
+          Review your progress summary before submitting your final answers:
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; text-align: center; margin-bottom: 1.25rem;">
+          <div class="card" style="padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Answered</div>
+            <div id="modalAnsweredCount" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-success);">0</div>
+          </div>
+          <div class="card" style="padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Unattempted</div>
+            <div id="modalUnattemptedCount" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-warning);">0</div>
+          </div>
+          <div class="card" style="padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Violations</div>
+            <div id="modalViolationsCount" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-danger);">0</div>
+          </div>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-dim);">
+          Once submitted, you will not be able to modify your answers.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="quizEngine.closeSubmitConfirmModal()">Return to Exam</button>
+        <button class="btn btn-cyan" onclick="quizEngine.finalizeSubmission()">Confirm & Submit ✔️</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 3. Cloud Sync (Firebase / Supabase) Modal -->
+  <div id="cloudSettingsModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">☁️ Firebase / Supabase Cloud Settings</h3>
+        <button class="modal-close" onclick="closeCloudSettingsModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+          The system operates offline-first with automatic local persistence. You can connect your Firebase or Supabase project below to sync question banks and candidate attempts to the cloud.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Project ID / App URL</label>
+          <input type="text" id="cloudProjectId" class="form-input" placeholder="e.g. online-quiz-system-prod">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Public API Key / Anon Key</label>
+          <input type="password" id="cloudApiKey" class="form-input" placeholder="Paste your API key...">
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; color: #a7f3d0;">
+          ✓ Local storage is currently active and storing all quizzes and attempt data automatically.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCloudSettingsModal()">Close</button>
+        <button class="btn btn-cyan" onclick="saveCloudConfig()">Save Cloud Settings</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <p>Online Quiz System — Built with Vanilla HTML5, CSS3 & ES6 JS &bull; PWA Cross-Platform Ready</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="./assets/js/quiz-data.js"></script>
+  <script src="./assets/js/firebase-config.js"></script>
+  <script src="./assets/js/quiz-engine.js"></script>
+  <script src="./assets/js/examiner.js"></script>
+  <script src="./assets/js/certificates.js"></script>
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>
