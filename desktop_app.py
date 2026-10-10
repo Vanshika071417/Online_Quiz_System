@@ -138,7 +138,7 @@ class DatabaseManager:
                 ("usr-admin", "admin", "admin123", "admin", "System Administrator", "Operations & Quality Assurance"),
                 ("usr-fac-1", "faculty", "faculty123", "faculty", "Prof. R.K. Sharma", "Computer Science & Engineering"),
                 ("usr-fac-2", "alan.turing", "turing123", "faculty", "Prof. Alan Turing", "Theoretical Computer Science"),
-                ("usr-stu-1", "student", "student123", "student", "Piyush Kumar (Candidate)", "B.Tech CSE - 2026"),
+                ("usr-stu-1", "student", "student123", "student", "Candidate Student", "B.Tech CSE - 2026"),
                 ("usr-stu-2", "candidate101", "pass123", "student", "Alex Mercer", "B.Tech CSE - 2026")
             ]
             cursor.executemany("""
@@ -1161,7 +1161,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             ctk.CTkLabel(self.form_body_frame, text=header_text, font=ctk.CTkFont(size=14, weight="bold"), text_color="#38bdf8").pack(anchor="w", pady=(0, 10))
 
             ctk.CTkLabel(self.form_body_frame, text="Full Legal Name:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(2, 2))
-            self.reg_name_in = ctk.CTkEntry(self.form_body_frame, placeholder_text="e.g. Piyush Kumar", height=36)
+            self.reg_name_in = ctk.CTkEntry(self.form_body_frame, placeholder_text="e.g. Alex Mercer", height=36)
             self.reg_name_in.pack(fill="x", pady=(0, 8))
 
             ctk.CTkLabel(self.form_body_frame, text=dept_label, font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(2, 2))
@@ -1169,7 +1169,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.reg_dept_in.pack(fill="x", pady=(0, 8))
 
             ctk.CTkLabel(self.form_body_frame, text="Desired Username / User ID:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(2, 2))
-            self.reg_user_in = ctk.CTkEntry(self.form_body_frame, placeholder_text="e.g. piyush2026", height=36)
+            self.reg_user_in = ctk.CTkEntry(self.form_body_frame, placeholder_text="e.g. candidate2026", height=36)
             self.reg_user_in.pack(fill="x", pady=(0, 8))
 
             ctk.CTkLabel(self.form_body_frame, text="Account Password:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(2, 2))

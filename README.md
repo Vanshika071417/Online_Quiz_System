@@ -85,15 +85,15 @@ python tqm_sqc_tools.py
 ## 📊 TQM Statistical Quality Control (SQC) Artefacts
 
 ### 1. Pareto Analysis (80/20 Rule)
-* Located at: [`sqc_charts/pareto_analysis.png`](file:///c:/Users/piyush/Documents/Online_Quiz_System/sqc_charts/pareto_analysis.png)
+* Located at: [`sqc_charts/pareto_analysis.png`](./sqc_charts/pareto_analysis.png)
 * Isolates the vital 20% of causes driving 80% of student exam friction (window focus switches and join code typos).
 
 ### 2. Ishikawa (Fishbone) Diagram
-* Located at: [`sqc_charts/ishikawa_fishbone.png`](file:///c:/Users/piyush/Documents/Online_Quiz_System/sqc_charts/ishikawa_fishbone.png)
+* Located at: [`sqc_charts/ishikawa_fishbone.png`](./sqc_charts/ishikawa_fishbone.png)
 * Maps root causes across **People**, **Process**, **Software Code**, and **Infrastructure**.
 
 ### 3. FMEA Risk Audit & RPN Reduction
-* Located at: [`docs/FMEA_MATRIX.md`](file:///c:/Users/piyush/Documents/Online_Quiz_System/docs/FMEA_MATRIX.md)
+* Located at: [`docs/FMEA_MATRIX.md`](./docs/FMEA_MATRIX.md)
 * Critical failure modes audited with severity, occurrence, and detection ratings. Mitigations achieved an average **> 85% RPN reduction**.
 
 ---
