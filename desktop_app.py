@@ -74,6 +74,30 @@ class DatabaseManager:
                 FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
             )
         """)
+        # Check and migrate columns in existing database
+        cursor.execute("PRAGMA table_info(quizzes)")
+        quiz_cols = [c[1] for c in cursor.fetchall()]
+        if "join_code" not in quiz_cols:
+            cursor.execute("ALTER TABLE quizzes ADD COLUMN join_code TEXT DEFAULT 'QZ-1001'")
+        if "teacher_name" not in quiz_cols:
+            cursor.execute("ALTER TABLE quizzes ADD COLUMN teacher_name TEXT DEFAULT 'Prof. Alan Turing'")
+
+        # Ensure all existing quizzes have valid join_code
+        cursor.execute("UPDATE quizzes SET join_code = 'QZ-1001' WHERE join_code IS NULL OR join_code = ''")
+
+        cursor.execute("PRAGMA table_info(attempts)")
+        attempt_cols = [c[1] for c in cursor.fetchall()]
+        if "join_code" not in attempt_cols:
+            cursor.execute("ALTER TABLE attempts ADD COLUMN join_code TEXT DEFAULT 'QZ-1001'")
+        if "teacher_name" not in attempt_cols:
+            cursor.execute("ALTER TABLE attempts ADD COLUMN teacher_name TEXT DEFAULT 'Prof. Alan Turing'")
+        if "student_name" not in attempt_cols:
+            if "candidate_name" in attempt_cols:
+                cursor.execute("ALTER TABLE attempts ADD COLUMN student_name TEXT DEFAULT ''")
+                cursor.execute("UPDATE attempts SET student_name = candidate_name WHERE student_name = ''")
+            else:
+                cursor.execute("ALTER TABLE attempts ADD COLUMN student_name TEXT DEFAULT 'Candidate'")
+
         conn.commit()
 
         # Seed initial quiz with join code if empty
@@ -127,10 +151,11 @@ class DatabaseManager:
         rows = cursor.fetchall()
         result = []
         for r in rows:
+            keys = r.keys()
             result.append({
                 "id": r["id"],
-                "joinCode": r["join_code"],
-                "teacherName": r["teacher_name"],
+                "joinCode": r["join_code"] if "join_code" in keys else "QZ-1001",
+                "teacherName": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
                 "title": r["title"],
                 "category": r["category"],
                 "description": r["description"],
@@ -150,10 +175,11 @@ class DatabaseManager:
         conn.close()
         if not r:
             return None
+        keys = r.keys()
         return {
             "id": r["id"],
-            "joinCode": r["join_code"],
-            "teacherName": r["teacher_name"],
+            "joinCode": r["join_code"] if "join_code" in keys else "QZ-1001",
+            "teacherName": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
             "title": r["title"],
             "category": r["category"],
             "description": r["description"],
@@ -233,12 +259,14 @@ class DatabaseManager:
         rows = cursor.fetchall()
         result = []
         for r in rows:
+            keys = r.keys()
+            student_name = r["student_name"] if "student_name" in keys else (r["candidate_name"] if "candidate_name" in keys else "Student")
             result.append({
                 "id": r["id"],
                 "quizTitle": r["quiz_title"],
-                "joinCode": r["join_code"],
-                "teacherName": r["teacher_name"],
-                "studentName": r["student_name"],
+                "joinCode": r["join_code"] if "join_code" in keys else "QZ-1001",
+                "teacherName": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
+                "studentName": student_name,
                 "score": r["score"],
                 "totalQuestions": r["total_questions"],
                 "percentage": r["percentage"],

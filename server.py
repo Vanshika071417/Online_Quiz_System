@@ -104,6 +104,28 @@ def init_db():
             FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
         )
     """)
+    # Migrate existing database columns
+    cursor.execute("PRAGMA table_info(quizzes)")
+    quiz_cols = [c[1] for c in cursor.fetchall()]
+    if "join_code" not in quiz_cols:
+        cursor.execute("ALTER TABLE quizzes ADD COLUMN join_code TEXT DEFAULT 'QZ-1001'")
+    if "teacher_name" not in quiz_cols:
+        cursor.execute("ALTER TABLE quizzes ADD COLUMN teacher_name TEXT DEFAULT 'Prof. Alan Turing'")
+    cursor.execute("UPDATE quizzes SET join_code = 'QZ-1001' WHERE join_code IS NULL OR join_code = ''")
+
+    cursor.execute("PRAGMA table_info(attempts)")
+    attempt_cols = [c[1] for c in cursor.fetchall()]
+    if "join_code" not in attempt_cols:
+        cursor.execute("ALTER TABLE attempts ADD COLUMN join_code TEXT DEFAULT 'QZ-1001'")
+    if "teacher_name" not in attempt_cols:
+        cursor.execute("ALTER TABLE attempts ADD COLUMN teacher_name TEXT DEFAULT 'Prof. Alan Turing'")
+    if "student_name" not in attempt_cols:
+        if "candidate_name" in attempt_cols:
+            cursor.execute("ALTER TABLE attempts ADD COLUMN student_name TEXT DEFAULT ''")
+            cursor.execute("UPDATE attempts SET student_name = candidate_name WHERE student_name = ''")
+        else:
+            cursor.execute("ALTER TABLE attempts ADD COLUMN student_name TEXT DEFAULT 'Candidate'")
+
     conn.commit()
     conn.close()
 
