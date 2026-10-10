@@ -467,8 +467,17 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.cheat_violations = 0
         self.last_focus_loss_time = 0
 
+        # Accessibility, High Contrast & Layout Configuration
+        self.font_scale = 1.0  # Range: 0.85 to 1.45
+        self.high_contrast = False
+        self.minimalist_focus_mode = False
+        self.current_theme = "Dark"
+
         # Anti-cheat listener: bind window focus loss
         self.bind("<FocusOut>", self.on_window_focus_loss)
+
+        # Global Keyboard Navigation Listeners
+        self.setup_keyboard_shortcuts()
 
         # Main Layout Grid
         self.grid_columnconfigure(1, weight=1)
@@ -483,7 +492,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
     def setup_sidebar(self):
         self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color="#090d16")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_rowconfigure(12, weight=1)
+        self.sidebar.grid_rowconfigure(14, weight=1)
 
         # Brand Header
         brand_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
@@ -543,22 +552,94 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         # Dynamic Navigation Buttons
         self.nav_1 = ctk.CTkButton(self.sidebar, text="Nav 1", anchor="w", font=ctk.CTkFont(size=13, weight="bold"), command=lambda: self.on_sidebar_nav_click(1))
-        self.nav_1.grid(row=2, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_1.grid(row=2, column=0, padx=15, pady=3, sticky="ew")
 
         self.nav_2 = ctk.CTkButton(self.sidebar, text="Nav 2", anchor="w", fg_color="transparent", hover_color="#1e293b", font=ctk.CTkFont(size=13), command=lambda: self.on_sidebar_nav_click(2))
-        self.nav_2.grid(row=3, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_2.grid(row=3, column=0, padx=15, pady=3, sticky="ew")
 
         self.nav_3 = ctk.CTkButton(self.sidebar, text="Nav 3", anchor="w", fg_color="transparent", hover_color="#1e293b", font=ctk.CTkFont(size=13), command=lambda: self.on_sidebar_nav_click(3))
-        self.nav_3.grid(row=4, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_3.grid(row=4, column=0, padx=15, pady=3, sticky="ew")
 
         self.nav_4 = ctk.CTkButton(self.sidebar, text="Nav 4", anchor="w", fg_color="transparent", hover_color="#1e293b", font=ctk.CTkFont(size=13), command=lambda: self.on_sidebar_nav_click(4))
-        self.nav_4.grid(row=5, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_4.grid(row=5, column=0, padx=15, pady=3, sticky="ew")
 
         self.nav_5 = ctk.CTkButton(self.sidebar, text="Nav 5", anchor="w", fg_color="transparent", hover_color="#1e293b", font=ctk.CTkFont(size=13), command=lambda: self.on_sidebar_nav_click(5))
-        self.nav_5.grid(row=6, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_5.grid(row=6, column=0, padx=15, pady=3, sticky="ew")
 
         self.nav_6 = ctk.CTkButton(self.sidebar, text="Nav 6", anchor="w", fg_color="transparent", hover_color="#1e293b", font=ctk.CTkFont(size=13), command=lambda: self.on_sidebar_nav_click(6))
-        self.nav_6.grid(row=7, column=0, padx=15, pady=4, sticky="ew")
+        self.nav_6.grid(row=7, column=0, padx=15, pady=3, sticky="ew")
+
+        # Accessibility & Display Toolbar Card in Sidebar
+        self.acc_card = ctk.CTkFrame(self.sidebar, fg_color="#111827", corner_radius=10, border_width=1, border_color="#1f2937")
+        self.acc_card.grid(row=8, column=0, padx=15, pady=(8, 4), sticky="ew")
+
+        ctk.CTkLabel(
+            self.acc_card,
+            text="🎨 Display & Accessibility",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#38bdf8"
+        ).pack(anchor="w", padx=12, pady=(6, 2))
+
+        # Row 1: Appearance Mode & High Contrast Toggle
+        row_disp = ctk.CTkFrame(self.acc_card, fg_color="transparent")
+        row_disp.pack(fill="x", padx=8, pady=2)
+
+        self.theme_btn = ctk.CTkButton(
+            row_disp,
+            text="🌙 Dark" if self.current_theme == "Dark" else "☀️ Light",
+            font=ctk.CTkFont(size=11),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            command=self.toggle_appearance_mode
+        )
+        self.theme_btn.pack(side="left", padx=2, expand=True, fill="x")
+
+        self.contrast_btn = ctk.CTkButton(
+            row_disp,
+            text="👁️ Contrast: " + ("AAA" if self.high_contrast else "Norm"),
+            font=ctk.CTkFont(size=11),
+            fg_color="#000000" if self.high_contrast else "#1e293b",
+            text_color="#fde047" if self.high_contrast else "#ffffff",
+            border_width=1 if self.high_contrast else 0,
+            border_color="#ffffff",
+            hover_color="#334155",
+            command=self.toggle_high_contrast
+        )
+        self.contrast_btn.pack(side="left", padx=2, expand=True, fill="x")
+
+        # Row 2: Font Resizing (A- / 100% / A+)
+        row_font = ctk.CTkFrame(self.acc_card, fg_color="transparent")
+        row_font.pack(fill="x", padx=8, pady=(2, 6))
+
+        ctk.CTkButton(
+            row_font,
+            text="A-",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            width=36,
+            height=28,
+            command=lambda: self.adjust_font_scale(-0.15)
+        ).pack(side="left", padx=2)
+
+        self.font_scale_lbl = ctk.CTkLabel(
+            row_font,
+            text=f"Font: {int(round(self.font_scale * 100))}%",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#94a3b8"
+        )
+        self.font_scale_lbl.pack(side="left", expand=True)
+
+        ctk.CTkButton(
+            row_font,
+            text="A+",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            width=36,
+            height=28,
+            command=lambda: self.adjust_font_scale(0.15)
+        ).pack(side="left", padx=2)
 
         # Bottom Actions & System Info
         self.logout_btn = ctk.CTkButton(
@@ -570,24 +651,24 @@ class OnlineQuizDesktopApp(ctk.CTk):
             font=ctk.CTkFont(size=12, weight="bold"),
             command=self.handle_logout
         )
-        self.logout_btn.grid(row=13, column=0, padx=15, pady=(5, 10), sticky="ew")
+        self.logout_btn.grid(row=15, column=0, padx=15, pady=(5, 8), sticky="ew")
 
         info_card = ctk.CTkFrame(self.sidebar, fg_color="#111827", corner_radius=10)
-        info_card.grid(row=14, column=0, padx=15, pady=(0, 20), sticky="ew")
+        info_card.grid(row=16, column=0, padx=15, pady=(0, 15), sticky="ew")
 
         ctk.CTkLabel(
             info_card,
             text="● Zero-Latency Grading Engine",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#10b981"
-        ).pack(padx=10, pady=(8, 2))
+        ).pack(padx=10, pady=(6, 2))
 
         ctk.CTkLabel(
             info_card,
             text="SQLite ACID Persistent • Poka-Yoke",
             font=ctk.CTkFont(size=10),
             text_color="#64748b"
-        ).pack(padx=10, pady=(0, 8))
+        ).pack(padx=10, pady=(0, 6))
 
     def setup_workspace(self):
         self.workspace = ctk.CTkFrame(self, corner_radius=14, fg_color="#0c111d")
@@ -598,6 +679,170 @@ class OnlineQuizDesktopApp(ctk.CTk):
     def clear_workspace(self):
         for w in self.workspace.winfo_children():
             w.destroy()
+
+    # =========================================================================
+    # ACCESSIBILITY, CONTRAST, SCALING & KEYBOARD NAVIGATION HELPERS
+    # =========================================================================
+    def scaled_font(self, size, weight="normal", family=None):
+        scaled_size = max(9, int(round(size * self.font_scale)))
+        kwargs = {"size": scaled_size, "weight": weight}
+        if family:
+            kwargs["family"] = family
+        return ctk.CTkFont(**kwargs)
+
+    def get_theme_colors(self):
+        if self.high_contrast:
+            return {
+                "workspace_bg": "#000000",
+                "card_bg": "#050505",
+                "card_border": "#ffffff",
+                "border_width": 2,
+                "text_primary": "#ffffff",
+                "text_secondary": "#fde047",  # high-vis yellow
+                "text_cyan": "#38bdf8",
+                "accent_primary": "#fbbf24",
+                "btn_fg": "#ffffff",
+                "btn_text": "#000000",
+                "palette_current": "#ffffff",
+                "palette_answered": "#22c55e",
+                "palette_review": "#f59e0b",
+                "palette_unanswered": "#27272a"
+            }
+        else:
+            return {
+                "workspace_bg": "#0c111d",
+                "card_bg": "#111827",
+                "card_border": "#1e293b",
+                "border_width": 1,
+                "text_primary": "#ffffff",
+                "text_secondary": "#94a3b8",
+                "text_cyan": "#06b6d4",
+                "accent_primary": "#6366f1",
+                "btn_fg": "#06b6d4",
+                "btn_text": "#ffffff",
+                "palette_current": "#0284c7",
+                "palette_answered": "#10b981",
+                "palette_review": "#f59e0b",
+                "palette_unanswered": "#334155"
+            }
+
+    def adjust_font_scale(self, delta):
+        new_scale = round(self.font_scale + delta, 2)
+        if 0.85 <= new_scale <= 1.55:
+            self.font_scale = new_scale
+            if hasattr(self, "font_scale_lbl") and self.font_scale_lbl.winfo_exists():
+                self.font_scale_lbl.configure(text=f"Font: {int(round(self.font_scale * 100))}%")
+            self.refresh_current_view()
+
+    def set_font_scale(self, scale):
+        self.font_scale = scale
+        if hasattr(self, "font_scale_lbl") and self.font_scale_lbl.winfo_exists():
+            self.font_scale_lbl.configure(text=f"Font: {int(round(self.font_scale * 100))}%")
+        self.refresh_current_view()
+
+    def toggle_high_contrast(self):
+        self.high_contrast = not self.high_contrast
+        if self.high_contrast:
+            ctk.set_appearance_mode("Dark")
+            self.current_theme = "Dark"
+        if hasattr(self, "contrast_btn") and self.contrast_btn.winfo_exists():
+            self.contrast_btn.configure(
+                text="👁️ Contrast: " + ("AAA" if self.high_contrast else "Norm"),
+                fg_color="#000000" if self.high_contrast else "#1e293b",
+                text_color="#fde047" if self.high_contrast else "#ffffff",
+                border_width=1 if self.high_contrast else 0
+            )
+        self.refresh_current_view()
+
+    def toggle_appearance_mode(self):
+        if self.current_theme == "Dark":
+            self.current_theme = "Light"
+            ctk.set_appearance_mode("Light")
+        else:
+            self.current_theme = "Dark"
+            ctk.set_appearance_mode("Dark")
+        if hasattr(self, "theme_btn") and self.theme_btn.winfo_exists():
+            self.theme_btn.configure(text="🌙 Dark" if self.current_theme == "Dark" else "☀️ Light")
+        self.refresh_current_view()
+
+    def toggle_minimalist_mode(self):
+        self.minimalist_focus_mode = not self.minimalist_focus_mode
+        if self.timer_running and self.active_quiz:
+            self.render_live_exam_arena()
+
+    def refresh_current_view(self):
+        if self.timer_running and self.active_quiz:
+            self.render_live_exam_arena()
+        elif self.current_user is None:
+            self.render_login_view()
+        elif self.current_role == "student":
+            self.render_student_lobby()
+        elif self.current_role == "faculty":
+            self.render_teacher_quizzes()
+        elif self.current_role == "admin":
+            self.render_admin_overview()
+
+    def setup_keyboard_shortcuts(self):
+        """Binds universal keyboard navigation across the application."""
+        for key, opt_idx in [("1", 0), ("2", 1), ("3", 2), ("4", 3),
+                             ("a", 0), ("b", 1), ("c", 2), ("d", 3),
+                             ("A", 0), ("B", 1), ("C", 2), ("D", 3)]:
+            self.bind(f"<Key-{key}>", lambda e, idx=opt_idx: self.on_hotkey_option(idx))
+
+        self.bind("<Left>", lambda e: self.on_hotkey_nav(-1))
+        self.bind("<Key-p>", lambda e: self.on_hotkey_nav(-1))
+        self.bind("<Key-P>", lambda e: self.on_hotkey_nav(-1))
+        self.bind("<Right>", lambda e: self.on_hotkey_nav(1))
+        self.bind("<Key-n>", lambda e: self.on_hotkey_nav(1))
+        self.bind("<Key-N>", lambda e: self.on_hotkey_nav(1))
+
+        self.bind("<Key-m>", lambda e: self.on_hotkey_review())
+        self.bind("<Key-M>", lambda e: self.on_hotkey_review())
+        self.bind("<Key-s>", lambda e: self.on_hotkey_submit())
+        self.bind("<Key-S>", lambda e: self.on_hotkey_submit())
+        self.bind("<Key-f>", lambda e: self.on_hotkey_focus())
+        self.bind("<Key-F>", lambda e: self.on_hotkey_focus())
+
+        self.bind("<Control-plus>", lambda e: self.adjust_font_scale(0.15))
+        self.bind("<Control-equal>", lambda e: self.adjust_font_scale(0.15))
+        self.bind("<Control-minus>", lambda e: self.adjust_font_scale(-0.15))
+        self.bind("<Control-Key-0>", lambda e: self.set_font_scale(1.0))
+
+    def _is_text_entry_focused(self):
+        focused = self.focus_get()
+        return isinstance(focused, (tk.Entry, tk.Text, ctk.CTkEntry, ctk.CTkTextbox))
+
+    def on_hotkey_option(self, opt_idx):
+        if self._is_text_entry_focused() or not (self.timer_running and self.active_quiz):
+            return
+        questions = self.active_quiz["questions"]
+        if 0 <= self.current_q_index < len(questions):
+            q = questions[self.current_q_index]
+            if opt_idx < len(q["options"]):
+                self.select_answer(q["id"], opt_idx)
+
+    def on_hotkey_nav(self, delta):
+        if self._is_text_entry_focused() or not (self.timer_running and self.active_quiz):
+            return
+        if delta == -1:
+            self.prev_question()
+        else:
+            self.next_question()
+
+    def on_hotkey_review(self):
+        if self._is_text_entry_focused() or not (self.timer_running and self.active_quiz):
+            return
+        self.toggle_review_flag()
+
+    def on_hotkey_submit(self):
+        if self._is_text_entry_focused() or not (self.timer_running and self.active_quiz):
+            return
+        self.confirm_student_submission()
+
+    def on_hotkey_focus(self):
+        if self._is_text_entry_focused() or not (self.timer_running and self.active_quiz):
+            return
+        self.toggle_minimalist_mode()
 
     def update_sidebar_profile(self):
         if not self.current_user:
@@ -1376,77 +1621,166 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
     def render_live_exam_arena(self):
         self.clear_workspace()
+        colors = self.get_theme_colors()
 
-        # Top Bar with Timer & Anti-Cheat
-        top = ctk.CTkFrame(self.workspace, fg_color="#182234", corner_radius=10)
-        top.pack(fill="x", padx=25, pady=(15, 10))
+        # Apply high-contrast or standard workspace background
+        self.workspace.configure(fg_color=colors["workspace_bg"])
+
+        # Top Bar with Timer, Proctoring Badge, and Accessibility Controls
+        top = ctk.CTkFrame(
+            self.workspace,
+            fg_color=colors["card_bg"],
+            corner_radius=10,
+            border_width=colors["border_width"],
+            border_color=colors["card_border"]
+        )
+        top.pack(fill="x", padx=25, pady=(15, 8))
 
         ctk.CTkLabel(
             top,
             text=f"Exam: {self.active_quiz['title']}",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            text_color="#ffffff"
-        ).pack(side="left", padx=15, pady=12)
+            font=self.scaled_font(15, weight="bold"),
+            text_color=colors["text_primary"]
+        ).pack(side="left", padx=15, pady=10)
 
-        badge_color = "#ef4444" if self.cheat_violations > 0 else "#94a3b8"
+        badge_color = "#ef4444" if self.cheat_violations > 0 else colors["text_secondary"]
         self.cheat_badge = ctk.CTkLabel(
             top,
-            text=f"⚠️ Violations: {self.cheat_violations}",
-            font=ctk.CTkFont(size=12, weight="bold"),
+            text=f"🛡️ Violations: {self.cheat_violations}",
+            font=self.scaled_font(12, weight="bold"),
             text_color=badge_color
         )
-        self.cheat_badge.pack(side="left", padx=15, pady=12)
+        self.cheat_badge.pack(side="left", padx=10, pady=10)
 
+        # Right-aligned Accessibility & Timer Toolbar
+        right_toolbar = ctk.CTkFrame(top, fg_color="transparent")
+        right_toolbar.pack(side="right", padx=15, pady=8)
+
+        # Countdown Timer
         self.timer_lbl = ctk.CTkLabel(
-            top,
+            right_toolbar,
             text="⏱️ 00:00",
-            font=ctk.CTkFont(size=18, weight="bold"),
-            text_color="#06b6d4"
+            font=self.scaled_font(17, weight="bold"),
+            text_color="#ef4444" if self.time_left_seconds <= 60 else colors["text_cyan"]
         )
-        self.timer_lbl.pack(side="right", padx=15, pady=12)
+        self.timer_lbl.pack(side="right", padx=(10, 0))
+
+        # Minimalist / Focus Mode Toggle Button
+        focus_btn_text = "🎯 Normal Layout" if self.minimalist_focus_mode else "🎯 Focus Mode [F]"
+        focus_btn_color = "#0284c7" if self.minimalist_focus_mode else ("#000000" if self.high_contrast else "#1e293b")
+        ctk.CTkButton(
+            right_toolbar,
+            text=focus_btn_text,
+            fg_color=focus_btn_color,
+            hover_color="#0369a1",
+            font=self.scaled_font(11, weight="bold"),
+            width=120,
+            height=30,
+            command=self.toggle_minimalist_mode
+        ).pack(side="right", padx=4)
+
+        # High Contrast Toggle Button
+        contrast_btn_text = "👁️ High Contrast: ON" if self.high_contrast else "👁️ High Contrast"
+        ctk.CTkButton(
+            right_toolbar,
+            text=contrast_btn_text,
+            fg_color="#000000" if self.high_contrast else "#1e293b",
+            text_color="#fde047" if self.high_contrast else "#ffffff",
+            border_width=1 if self.high_contrast else 0,
+            border_color="#ffffff",
+            hover_color="#334155",
+            font=self.scaled_font(11),
+            width=135,
+            height=30,
+            command=self.toggle_high_contrast
+        ).pack(side="right", padx=4)
+
+        # Font Resizing Controls in Top Bar
+        ctk.CTkButton(
+            right_toolbar,
+            text="A-",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            width=36,
+            height=30,
+            command=lambda: self.adjust_font_scale(-0.15)
+        ).pack(side="right", padx=2)
+
+        ctk.CTkButton(
+            right_toolbar,
+            text="A+",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            width=36,
+            height=30,
+            command=lambda: self.adjust_font_scale(0.15)
+        ).pack(side="right", padx=2)
 
         # Non-blocking anti-cheat warning banner if violations occurred
         if self.cheat_violations > 0:
             cheat_alert = ctk.CTkFrame(self.workspace, fg_color="#450a0a", corner_radius=8, border_width=1, border_color="#b91c1c")
-            cheat_alert.pack(fill="x", padx=25, pady=(0, 10))
+            cheat_alert.pack(fill="x", padx=25, pady=(0, 8))
             ctk.CTkLabel(
                 cheat_alert,
                 text=f"⚠️ Anti-Cheat Warning: {self.cheat_violations} external window switch event(s) logged and reported to instructor.",
-                font=ctk.CTkFont(size=12, weight="bold"),
+                font=self.scaled_font(12, weight="bold"),
                 text_color="#fca5a5"
-            ).pack(padx=12, pady=7)
+            ).pack(padx=12, pady=6)
 
-        # Main Arena Grid: Left Question (3 cols) | Right Question Palette (1 col)
+        # Main Arena Grid: Left Question | Right Palette (Hidden in Minimalist Focus Mode)
         arena = ctk.CTkFrame(self.workspace, fg_color="transparent")
-        arena.pack(fill="both", expand=True, padx=25, pady=5)
-        arena.grid_columnconfigure(0, weight=3)
-        arena.grid_columnconfigure(1, weight=1)
-        arena.grid_rowconfigure(0, weight=1)
+        arena.pack(fill="both", expand=True, padx=25, pady=4)
 
-        # Left: Question Area
-        q_frame = ctk.CTkFrame(arena, fg_color="#111827", corner_radius=12)
-        q_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 15))
+        if self.minimalist_focus_mode:
+            # Minimalist Layout: 1 Column taking 100% width
+            arena.grid_columnconfigure(0, weight=1)
+            arena.grid_rowconfigure(0, weight=1)
+        else:
+            # Standard Multi-Column Layout: Question Area (3 cols) | Palette (1 col)
+            arena.grid_columnconfigure(0, weight=3)
+            arena.grid_columnconfigure(1, weight=1)
+            arena.grid_rowconfigure(0, weight=1)
+
+        # Left: Question Area Card
+        q_frame = ctk.CTkFrame(
+            arena,
+            fg_color=colors["card_bg"],
+            corner_radius=12,
+            border_width=colors["border_width"],
+            border_color=colors["card_border"]
+        )
+        q_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 0 if self.minimalist_focus_mode else 15))
 
         q = self.active_quiz["questions"][self.current_q_index]
 
         # Question Header & Review Toggle
         q_top = ctk.CTkFrame(q_frame, fg_color="transparent")
-        q_top.pack(fill="x", padx=20, pady=(18, 5))
+        q_top.pack(fill="x", padx=20, pady=(15, 5))
+
+        q_status_text = f"Question {self.current_q_index + 1} of {len(self.active_quiz['questions'])}"
+        if self.minimalist_focus_mode:
+            q_status_text += "  •  [Focus Mode Active - Press F to toggle palette]"
 
         ctk.CTkLabel(
             q_top,
-            text=f"Question {self.current_q_index + 1} of {len(self.active_quiz['questions'])}",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#818cf8"
+            text=q_status_text,
+            font=self.scaled_font(13, weight="bold"),
+            text_color=colors["text_cyan"]
         ).pack(side="left")
 
         is_review = self.current_q_index in self.review_flags
         rev_btn = ctk.CTkButton(
             q_top,
-            text="★ Marked for Review" if is_review else "☆ Mark for Review",
-            fg_color="#f59e0b" if is_review else "#334155",
+            text="★ Marked for Review [M]" if is_review else "☆ Mark for Review [M]",
+            fg_color="#f59e0b" if is_review else ("#000000" if self.high_contrast else "#334155"),
+            text_color="#ffffff" if is_review else (colors["text_secondary"]),
             hover_color="#d97706",
-            width=140,
+            border_width=1 if self.high_contrast else 0,
+            border_color="#ffffff",
+            width=165,
+            font=self.scaled_font(12, weight="bold"),
             command=self.toggle_review_flag
         )
         rev_btn.pack(side="right")
@@ -1455,97 +1789,150 @@ class OnlineQuizDesktopApp(ctk.CTk):
         ctk.CTkLabel(
             q_frame,
             text=q["text"],
-            font=ctk.CTkFont(size=16, weight="bold"),
-            wraplength=600,
+            font=self.scaled_font(16, weight="bold"),
+            wraplength=760 if self.minimalist_focus_mode else 580,
             justify="left",
-            text_color="#ffffff"
+            text_color=colors["text_primary"]
         ).pack(anchor="w", padx=20, pady=(8, 12))
 
         # Optional Code Snippet
         if q.get("code"):
-            code_box = ctk.CTkTextbox(q_frame, height=85, font=ctk.CTkFont(family="Consolas", size=12), text_color="#38bdf8", fg_color="#050811")
+            code_bg = "#000000" if self.high_contrast else "#050811"
+            code_text_color = "#fde047" if self.high_contrast else "#38bdf8"
+            code_box = ctk.CTkTextbox(
+                q_frame,
+                height=90,
+                font=self.scaled_font(12, family="Consolas"),
+                text_color=code_text_color,
+                fg_color=code_bg,
+                border_width=1 if self.high_contrast else 0,
+                border_color="#ffffff"
+            )
             code_box.insert("1.0", q["code"])
             code_box.configure(state="disabled")
             code_box.pack(fill="x", padx=20, pady=(0, 12))
 
-        # Radio Buttons
+        # Radio Buttons with Keyboard Hotkey Badges
         self.current_radio = tk.IntVar(value=self.user_answers.get(q["id"], -1))
         options_box = ctk.CTkFrame(q_frame, fg_color="transparent")
         options_box.pack(fill="x", padx=20, pady=5)
 
         for opt_idx, opt_text in enumerate(q["options"]):
-            radio = ctk.CTkRadioButton(
+            letter = chr(65 + opt_idx)  # A, B, C, D
+            badge_text = f"[{opt_idx + 1} / {letter}]"
+
+            opt_row = ctk.CTkFrame(
                 options_box,
+                fg_color="#0a0f1d" if not self.high_contrast else "#000000",
+                corner_radius=8,
+                border_width=1,
+                border_color=colors["card_border"]
+            )
+            opt_row.pack(fill="x", pady=5)
+
+            # Hotkey Badge Chip
+            chip = ctk.CTkLabel(
+                opt_row,
+                text=badge_text,
+                font=self.scaled_font(11, weight="bold"),
+                text_color="#ffffff" if self.high_contrast else "#38bdf8",
+                fg_color="#27272a" if self.high_contrast else "#1e293b",
+                corner_radius=5,
+                padx=6,
+                pady=2
+            )
+            chip.pack(side="left", padx=(10, 6), pady=8)
+
+            radio = ctk.CTkRadioButton(
+                opt_row,
                 text=opt_text,
                 variable=self.current_radio,
                 value=opt_idx,
-                font=ctk.CTkFont(size=14),
+                font=self.scaled_font(14),
+                text_color=colors["text_primary"],
                 command=lambda idx=opt_idx: self.select_answer(q["id"], idx)
             )
-            radio.pack(anchor="w", pady=7)
+            radio.pack(side="left", fill="x", expand=True, padx=(4, 10), pady=8)
 
-        # Right: Question Palette Matrix
-        palette_frame = ctk.CTkFrame(arena, fg_color="#111827", corner_radius=12)
-        palette_frame.grid(row=0, column=1, sticky="nsew")
-
-        ctk.CTkLabel(
-            palette_frame,
-            text="Question Palette",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color="#ffffff"
-        ).pack(anchor="w", padx=15, pady=(15, 5))
-
-        # Palette Legend
-        legend = ctk.CTkFrame(palette_frame, fg_color="transparent")
-        legend.pack(fill="x", padx=15, pady=4)
-        ctk.CTkLabel(legend, text="🟩 Answered  🟨 Review  ⬜ Left", font=ctk.CTkFont(size=10), text_color="#94a3b8").pack(anchor="w")
-
-        # Number Grid Scroll
-        grid_scroll = ctk.CTkScrollableFrame(palette_frame, fg_color="transparent")
-        grid_scroll.pack(fill="both", expand=True, padx=10, pady=10)
-        grid_scroll.grid_columnconfigure((0, 1, 2, 3), weight=1)
-
-        for idx, item_q in enumerate(self.active_quiz["questions"]):
-            q_id = item_q["id"]
-            if idx == self.current_q_index:
-                btn_color = "#0284c7"
-            elif idx in self.review_flags:
-                btn_color = "#f59e0b"
-            elif q_id in self.user_answers:
-                btn_color = "#10b981"
-            else:
-                btn_color = "#334155"
-
-            btn_q = ctk.CTkButton(
-                grid_scroll,
-                text=str(idx + 1),
-                width=42,
-                height=42,
-                fg_color=btn_color,
-                font=ctk.CTkFont(weight="bold"),
-                command=lambda target_idx=idx: self.jump_to_question(target_idx)
+        # Right: Question Palette Matrix (Shown only when NOT in Minimalist Focus Mode)
+        if not self.minimalist_focus_mode:
+            palette_frame = ctk.CTkFrame(
+                arena,
+                fg_color=colors["card_bg"],
+                corner_radius=12,
+                border_width=colors["border_width"],
+                border_color=colors["card_border"]
             )
-            btn_q.grid(row=idx // 4, column=idx % 4, padx=4, pady=4)
+            palette_frame.grid(row=0, column=1, sticky="nsew")
 
-        # Submit Button in Palette
-        submit_palette_btn = ctk.CTkButton(
-            palette_frame,
-            text="Submit Assessment ✔️",
-            fg_color="#10b981",
-            hover_color="#059669",
-            font=ctk.CTkFont(weight="bold"),
-            command=self.confirm_student_submission
-        )
-        submit_palette_btn.pack(fill="x", padx=15, pady=15)
+            pal_top = ctk.CTkFrame(palette_frame, fg_color="transparent")
+            pal_top.pack(fill="x", padx=15, pady=(15, 4))
+
+            ctk.CTkLabel(
+                pal_top,
+                text="Question Palette",
+                font=self.scaled_font(14, weight="bold"),
+                text_color=colors["text_primary"]
+            ).pack(side="left")
+
+            # Palette Legend
+            legend = ctk.CTkFrame(palette_frame, fg_color="transparent")
+            legend.pack(fill="x", padx=15, pady=4)
+            ctk.CTkLabel(
+                legend,
+                text="🟩 Answered  🟨 Review  ⬜ Left",
+                font=self.scaled_font(10),
+                text_color=colors["text_secondary"]
+            ).pack(anchor="w")
+
+            # Number Grid Scroll
+            grid_scroll = ctk.CTkScrollableFrame(palette_frame, fg_color="transparent")
+            grid_scroll.pack(fill="both", expand=True, padx=8, pady=8)
+            grid_scroll.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+            for idx, item_q in enumerate(self.active_quiz["questions"]):
+                q_id = item_q["id"]
+                if idx == self.current_q_index:
+                    btn_color = colors["palette_current"]
+                elif idx in self.review_flags:
+                    btn_color = colors["palette_review"]
+                elif q_id in self.user_answers:
+                    btn_color = colors["palette_answered"]
+                else:
+                    btn_color = colors["palette_unanswered"]
+
+                btn_q = ctk.CTkButton(
+                    grid_scroll,
+                    text=str(idx + 1),
+                    width=42,
+                    height=42,
+                    fg_color=btn_color,
+                    font=self.scaled_font(12, weight="bold"),
+                    command=lambda target_idx=idx: self.jump_to_question(target_idx)
+                )
+                btn_q.grid(row=idx // 4, column=idx % 4, padx=3, pady=3)
+
+            # Submit Button in Palette
+            submit_palette_btn = ctk.CTkButton(
+                palette_frame,
+                text="Submit Assessment ✔️ [S]",
+                fg_color="#10b981",
+                hover_color="#059669",
+                font=self.scaled_font(13, weight="bold"),
+                height=38,
+                command=self.confirm_student_submission
+            )
+            submit_palette_btn.pack(fill="x", padx=15, pady=15)
 
         # Bottom Action Bar
         action_bar = ctk.CTkFrame(self.workspace, fg_color="transparent")
-        action_bar.pack(fill="x", padx=25, pady=(10, 15))
+        action_bar.pack(fill="x", padx=25, pady=(8, 4))
 
         prev_btn = ctk.CTkButton(
             action_bar,
-            text="← Previous",
+            text="← Previous [P / ←]",
             state="normal" if self.current_q_index > 0 else "disabled",
+            font=self.scaled_font(12, weight="bold"),
             command=self.prev_question
         )
         prev_btn.pack(side="left")
@@ -1555,18 +1942,38 @@ class OnlineQuizDesktopApp(ctk.CTk):
             text="Finish Early",
             fg_color="#ef4444",
             hover_color="#dc2626",
+            font=self.scaled_font(12, weight="bold"),
             command=self.confirm_student_submission
         )
-        finish_btn.pack(side="left", padx=15)
+        finish_btn.pack(side="left", padx=12)
 
         is_last = self.current_q_index == len(self.active_quiz["questions"]) - 1
         next_btn = ctk.CTkButton(
             action_bar,
-            text="Finalize & Submit" if is_last else "Next Question →",
+            text="Finalize & Submit [S]" if is_last else "Next Question [N / →] →",
             fg_color="#10b981" if is_last else ["#3B8ED0", "#1F6AA5"],
+            font=self.scaled_font(12, weight="bold"),
             command=self.confirm_student_submission if is_last else self.next_question
         )
         next_btn.pack(side="right")
+
+        # Interactive Keyboard Shortcuts Legend Bar
+        legend_bar = ctk.CTkFrame(
+            self.workspace,
+            fg_color=colors["card_bg"],
+            corner_radius=8,
+            border_width=colors["border_width"],
+            border_color=colors["card_border"]
+        )
+        legend_bar.pack(fill="x", padx=25, pady=(4, 10))
+
+        shortcut_text = "⌨️ Shortcuts: [1-4 / A-D] Select Answer  •  [← / P] Previous  •  [→ / N] Next  •  [M] Mark for Review  •  [F] Focus Mode  •  [S] Submit  •  [Ctrl +/-] Font Size"
+        ctk.CTkLabel(
+            legend_bar,
+            text=shortcut_text,
+            font=self.scaled_font(11),
+            text_color=colors["text_secondary"]
+        ).pack(padx=12, pady=6)
 
     def select_answer(self, q_id, opt_idx):
         self.user_answers[q_id] = opt_idx

@@ -241,8 +241,45 @@ window.confirmGenerateWithAI = async function() {
   }
 };
 
+// Accessibility Controls: High Contrast, Font Resize, Minimalist Mode
+window.webFontScale = 1.0;
+
+window.toggleWebHighContrast = function() {
+  document.body.classList.toggle("high-contrast");
+  const isHighContrast = document.body.classList.contains("high-contrast");
+  localStorage.setItem("quiz_high_contrast", isHighContrast ? "1" : "0");
+  window.showToast?.(isHighContrast ? "High Contrast Mode: Enabled (WCAG AAA)" : "High Contrast Mode: Disabled", "info");
+};
+
+window.adjustWebFontSize = function(delta) {
+  window.webFontScale = Math.min(1.4, Math.max(0.85, (window.webFontScale || 1.0) + delta * 0.1));
+  document.documentElement.style.fontSize = `${window.webFontScale * 16}px`;
+  localStorage.setItem("quiz_font_scale", window.webFontScale.toString());
+  window.showToast?.(`Font Scale: ${Math.round(window.webFontScale * 100)}%`, "info");
+};
+
+window.toggleWebMinimalistLayout = function() {
+  document.body.classList.toggle("minimalist-mode");
+  const isMinimal = document.body.classList.contains("minimalist-mode");
+  localStorage.setItem("quiz_minimalist_mode", isMinimal ? "1" : "0");
+  window.showToast?.(isMinimal ? "Minimalist Focus Mode: ON" : "Standard Layout Restored", "info");
+};
+
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  // Restore accessibility preferences
+  if (localStorage.getItem("quiz_high_contrast") === "1") {
+    document.body.classList.add("high-contrast");
+  }
+  const savedScale = parseFloat(localStorage.getItem("quiz_font_scale"));
+  if (savedScale && savedScale >= 0.85 && savedScale <= 1.4) {
+    window.webFontScale = savedScale;
+    document.documentElement.style.fontSize = `${savedScale * 16}px`;
+  }
+  if (localStorage.getItem("quiz_minimalist_mode") === "1") {
+    document.body.classList.add("minimalist-mode");
+  }
+
   renderStudentCatalog();
   examinerStudio.init();
 

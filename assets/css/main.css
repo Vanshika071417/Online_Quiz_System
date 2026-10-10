@@ -220,3 +220,72 @@ body {
     padding: 1rem 0.75rem 2rem;
   }
 }
+
+/* =========================================================================
+   ACCESSIBILITY: HIGH CONTRAST, FONT RESIZING & MINIMALIST LAYOUT
+   ========================================================================= */
+body.high-contrast {
+  --bg-primary: #000000 !important;
+  --bg-secondary: #0a0a0a !important;
+  --bg-card: #050505 !important;
+  --border-subtle: #ffffff !important;
+  --border-color: #ffffff !important;
+  --text-main: #ffffff !important;
+  --text-muted: #fde047 !important; /* High-visibility yellow */
+  --accent-cyan: #38bdf8 !important;
+  --accent-indigo: #fbbf24 !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .card,
+body.high-contrast .modal-card,
+body.high-contrast .app-nav {
+  border: 2px solid #ffffff !important;
+  background: #050505 !important;
+}
+
+body.high-contrast .option-card,
+body.high-contrast .radio-card {
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .option-card.selected,
+body.high-contrast .radio-card.selected {
+  border-color: #fde047 !important;
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
+/* Minimalist Focus Mode: Hides peripheral sidebars during live exams */
+body.minimalist-mode .exam-palette-col {
+  display: none !important;
+}
+
+body.minimalist-mode .exam-question-col {
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
+}
+
+/* Accessibility Control Buttons */
+.access-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.access-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--accent-cyan);
+}
+

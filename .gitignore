@@ -24,3 +24,7 @@ venv/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Databases & Backups
+*.db
+backups/

@@ -14,6 +14,65 @@ class QuizEngine {
     this.isExamActive = false;
 
     this.bindAntiCheatListeners();
+    this.bindKeyboardListeners();
+  }
+
+  bindKeyboardListeners() {
+    window.addEventListener("keydown", (e) => {
+      const activeEl = document.activeElement;
+      const tag = activeEl ? activeEl.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || activeEl?.isContentEditable) {
+        return;
+      }
+
+      // Minimalist Focus Toggle
+      if ((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        window.toggleWebMinimalistLayout?.();
+        return;
+      }
+
+      if (!this.isExamActive || !this.currentQuiz) return;
+
+      const key = e.key.toUpperCase();
+
+      // Number keys 1-4 for answering options
+      if (["1", "2", "3", "4", "5", "6"].includes(e.key)) {
+        const idx = parseInt(e.key) - 1;
+        const q = this.currentQuiz.questions[this.currentIndex];
+        if (q && idx < q.options.length) {
+          this.selectOption(idx);
+          e.preventDefault();
+        }
+      }
+      // Letter keys A-D for answering options
+      else if (["A", "B", "C", "D", "E", "F"].includes(key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const letters = ["A", "B", "C", "D", "E", "F"];
+        const idx = letters.indexOf(key);
+        const q = this.currentQuiz.questions[this.currentIndex];
+        if (q && idx >= 0 && idx < q.options.length) {
+          this.selectOption(idx);
+          e.preventDefault();
+        }
+      }
+      // Navigation: Left arrow / P for Prev, Right arrow / N for Next
+      else if (e.key === "ArrowLeft" || key === "P") {
+        this.navigate(-1);
+        e.preventDefault();
+      } else if (e.key === "ArrowRight" || key === "N") {
+        this.navigate(1);
+        e.preventDefault();
+      }
+      // Mark for Review (M)
+      else if (key === "M") {
+        this.toggleReviewFlag();
+        e.preventDefault();
+      }
+      // Submit Confirm (S)
+      else if (key === "S") {
+        this.openSubmitConfirmModal();
+        e.preventDefault();
+      }
+    });
   }
 
   bindAntiCheatListeners() {
