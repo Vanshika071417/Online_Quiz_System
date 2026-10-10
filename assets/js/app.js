@@ -146,6 +146,101 @@ window.saveCloudConfig = function() {
   closeCloudSettingsModal();
 };
 
+// Join By Code (Mobile & Desktop Web)
+window.joinByCodeWeb = function() {
+  const code = (document.getElementById("joinCodeInputWeb")?.value || "").trim().toUpperCase();
+  if (!code) {
+    window.showToast("Please enter a 6-character Quiz Code (e.g. QZ-1001)", "warning");
+    return;
+  }
+  const quizzes = quizStorage.getQuizzes();
+  const found = quizzes.find(q => (q.joinCode && q.joinCode.toUpperCase() === code) || q.id === code.toLowerCase());
+  if (found) {
+    openStartExamModal(found.id);
+  } else {
+    window.showToast(`Quiz with code '${code}' not found. Check code with your teacher.`, "danger");
+  }
+};
+
+// AI Quiz Generator Modals & Handlers
+window.openAIGeneratorModal = function() {
+  const modal = document.getElementById("aiGeneratorModal");
+  if (modal) modal.classList.add("open");
+};
+
+window.closeAIGeneratorModal = function() {
+  const modal = document.getElementById("aiGeneratorModal");
+  if (modal) modal.classList.remove("open");
+};
+
+window.confirmGenerateWithAI = async function() {
+  const topic = (document.getElementById("aiTopicInput")?.value || "General Science").trim();
+  const count = parseInt(document.getElementById("aiCountSelect")?.value || "5", 10);
+  const diff = document.getElementById("aiDiffSelect")?.value || "Medium";
+
+  window.showToast(`🤖 Generating ${count} questions for "${topic}"...`, "info");
+  closeAIGeneratorModal();
+
+  try {
+    const res = await fetch("/api/ai-generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic, numQuestions: count, difficulty: diff })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const newQuiz = {
+        id: "quiz-ai-" + Date.now(),
+        joinCode: "QZ-" + Math.floor(1000 + Math.random() * 9000),
+        title: `${topic} (${diff})`,
+        category: "AI Generated",
+        description: `Curriculum assessment for ${topic} at ${diff} difficulty level.`,
+        durationMinutes: 10,
+        passingScore: 70,
+        tags: [topic.split(" ")[0], diff, "AI"],
+        questions: data.questions
+      };
+      quizStorage.saveQuiz(newQuiz);
+      window.showToast(`Quiz created with Join Code: ${newQuiz.joinCode}!`, "success");
+      examinerStudio.init();
+      renderStudentCatalog();
+    } else {
+      throw new Error("API error");
+    }
+  } catch (err) {
+    // Local offline generation fallback
+    const newQuiz = {
+      id: "quiz-ai-" + Date.now(),
+      joinCode: "QZ-" + Math.floor(1000 + Math.random() * 9000),
+      title: `${topic} (${diff})`,
+      category: "AI Generated",
+      description: `Comprehensive evaluation for ${topic}.`,
+      durationMinutes: 10,
+      passingScore: 70,
+      tags: [topic.split(" ")[0], diff],
+      questions: [
+        {
+          id: "q-1",
+          text: `In ${topic}, which principle is fundamental to ensure high performance and maintainability?`,
+          code: null,
+          options: [
+            `Standard design patterns, decoupling, and proper validation in ${topic}`,
+            "Hardcoding all state directly into global variables",
+            "Disabling error handling routines",
+            "Bypassing network security protocols"
+          ],
+          correct: 0,
+          explanation: `Systematic decoupling, design patterns, and validation ensure stability in ${topic}.`
+        }
+      ]
+    };
+    quizStorage.saveQuiz(newQuiz);
+    window.showToast(`Quiz created with Join Code: ${newQuiz.joinCode}!`, "success");
+    examinerStudio.init();
+    renderStudentCatalog();
+  }
+};
+
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
   renderStudentCatalog();

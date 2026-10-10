@@ -51,19 +51,64 @@ graph TD
 
 ---
 
-## 2. Platform Requirements & Roles
+## 2. Platform Roles & Core Workflows
 
-### 2.1 User Roles
-1. **Candidate / Student (Mobile & Desktop):**
-   - Browse public quizzes or join via invite/code.
-   - Timed quiz taking with offline/intermittent connectivity recovery.
-   - Instant review, scorecards, leaderboards, and detailed explanations.
-2. **Examiner / Instructor (Primarily Desktop):**
-   - Rich quiz builder (Multiple choice, code snippet, true/false, subjective, fill-in-the-blank).
-   - Question banks with tagging, difficulty levels, and automated randomization.
-   - Live monitoring of active candidates (progress, live score tracker).
-3. **Administrator (Desktop):**
-   - Role-based access control (RBAC), user management, compliance, and audit logs.
+The system is built around three distinct user roles with dedicated dashboards:
+
+```mermaid
+graph TD
+    subgraph Roles ["User Roles"]
+        ADMIN["🛡️ Administrator"]
+        TEACHER["👩‍🏫 Teacher / Faculty"]
+        STUDENT["🎓 Student / Candidate"]
+    end
+
+    subgraph TeacherFlow ["Teacher Workflow"]
+        T_CREATE["Create Quiz<br/>Manual or 🤖 AI Generated"]
+        T_CODE["Generate Quiz Code<br/>(e.g. QZ-8421)"]
+        T_REPORT["View Class Reports<br/>& Student Performance"]
+    end
+
+    subgraph StudentFlow ["Student Workflow"]
+        S_JOIN["Join via Quiz Code"]
+        S_EXAM["Take Timed Exam<br/>(Anti-Cheat Tracked)"]
+        S_RESULT["View Instant Scorecard<br/>& Explanation Review"]
+    end
+
+    subgraph AdminFlow ["Admin Workflow"]
+        A_METRICS["System Overview & Analytics"]
+        A_MANAGE["Manage Quizzes & Users"]
+    end
+
+    ADMIN --> A_METRICS
+    ADMIN --> A_MANAGE
+
+    TEACHER --> T_CREATE
+    T_CREATE --> T_CODE
+    T_CODE -.->|Shared Code| S_JOIN
+    S_RESULT -.->|Auto-synced Reports| T_REPORT
+
+    STUDENT --> S_JOIN
+    S_JOIN --> S_EXAM
+    S_EXAM --> S_RESULT
+```
+
+### 2.1 Role Capabilities
+
+1. **🛡️ Administrator Dashboard:**
+   - Complete system health, active teachers, enrolled students, total quizzes created, and global attempt volume.
+   - Global question bank access and administrative override/cleanup.
+
+2. **👩‍🏫 Teacher / Faculty Dashboard:**
+   - **Manual Quiz Builder:** Set subject, duration, passing percentage, custom questions, and explanations.
+   - **🤖 AI Quiz Generator:** Input subject/topic (e.g. *Python Data Science*, *Organic Chemistry*, *Operating Systems*), select question count and difficulty, and AI automatically constructs structured questions, distractors, correct answers, and explanations.
+   - **Quiz Join Code:** Every quiz generates a unique 6-character Code (e.g. `QZ-7429`) for easy distribution to students.
+   - **Teacher Class Reports:** Real-time gradebook showing every student who took their quizzes, individual scores, pass/fail status, and question-by-question class averages.
+
+3. **🎓 Student / Candidate Dashboard (Desktop & Android):**
+   - **Direct Join by Code:** Enter a 6-character Quiz Code provided by the teacher to instantly load the assessment.
+   - **Interactive Exam Arena:** Anti-cheat blur tracking, server-authoritative countdown clock, question palette, and code highlighting.
+   - **Student Performance Report:** Instant scoring gauge, passing status, detailed explanations, and teacher report delivery.
 
 ---
 

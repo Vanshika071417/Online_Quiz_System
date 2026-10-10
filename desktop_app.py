@@ -1,22 +1,24 @@
 """
 Online Quiz System - Native Python Desktop Application
-Built with CustomTkinter for high-performance Windows & Desktop native experience.
-Features:
-- Student Candidate Arena (Take tests, interactive options, live countdown, anti-cheat detection)
-- Examiner Studio (Create quizzes, add questions, set options & correct answer, manage bank)
-- Analytics & Exam History (Detailed scores, accuracy, proctor violations)
+Featuring 3 Dedicated Dashboards:
+1. 🛡️ Admin Dashboard (Global analytics, system health, all quizzes & attempt records)
+2. 👩‍🏫 Teacher / Faculty Dashboard (Manual builder, 🤖 AI Quiz Generator, Quiz Code generator, Student Class Reports)
+3. 🎓 Student Dashboard (Join via Quiz Code, timed proctored exam, personal scorecard & answers review)
 """
 
 import sys
 import json
 import time
 import sqlite3
+import random
 import datetime
 import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 
-# Configure CustomTkinter Appearance
+from ai_quiz_generator import generate_quiz_with_ai
+
+# CustomTkinter Setup
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
@@ -24,7 +26,7 @@ DB_PATH = "quiz_system.db"
 
 
 class DatabaseManager:
-    """Manages SQLite persistence for the Desktop application."""
+    """SQLite Database layer supporting Users, Quizzes, Quiz Join Codes, and Student Reports."""
     def __init__(self):
         self.init_db()
 
@@ -36,9 +38,13 @@ class DatabaseManager:
     def init_db(self):
         conn = self.get_connection()
         cursor = conn.cursor()
+        
+        # Quizzes table with join_code and teacher_id
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS quizzes (
                 id TEXT PRIMARY KEY,
+                join_code TEXT UNIQUE NOT NULL,
+                teacher_name TEXT NOT NULL DEFAULT 'Prof. Smith',
                 title TEXT NOT NULL,
                 category TEXT,
                 description TEXT,
@@ -49,48 +55,121 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Student attempts table linked to quiz and teacher
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS attempts (
                 id TEXT PRIMARY KEY,
                 quiz_id TEXT NOT NULL,
+                join_code TEXT NOT NULL,
                 quiz_title TEXT NOT NULL,
-                candidate_name TEXT NOT NULL,
+                teacher_name TEXT NOT NULL,
+                student_name TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 total_questions INTEGER NOT NULL,
                 percentage INTEGER NOT NULL,
                 passed INTEGER NOT NULL,
                 cheat_violations INTEGER DEFAULT 0,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
             )
         """)
         conn.commit()
+
+        # Seed initial quiz with join code if empty
+        cursor.execute("SELECT COUNT(*) FROM quizzes")
+        if cursor.fetchone()[0] == 0:
+            seed_q = [
+                {
+                    "id": "q1",
+                    "text": "What does HTTP status code 403 Forbidden indicate?",
+                    "code": None,
+                    "options": [
+                        "The server understood the request but refuses to authorize it",
+                        "The requested URL resource does not exist on the server",
+                        "The server crashed while executing a database query",
+                        "The request method is not supported"
+                    ],
+                    "correct": 0,
+                    "explanation": "403 Forbidden indicates the server authenticated or parsed the request but refuses permission."
+                },
+                {
+                    "id": "q2",
+                    "text": "Which Python data structure maintains insertion order starting from Python 3.7+?",
+                    "code": None,
+                    "options": ["dict (Dictionary)", "set (Set)", "frozenset", "Default tree bucket"],
+                    "correct": 0,
+                    "explanation": "In Python 3.7+, standard dictionaries guarantee key insertion order preservation."
+                }
+            ]
+            cursor.execute("""
+                INSERT INTO quizzes (id, join_code, teacher_name, title, category, description, duration_minutes, passing_score, tags, questions_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                "quiz-sample-1",
+                "QZ-1001",
+                "Prof. Alan Turing",
+                "Computer Science Foundations",
+                "Software Engineering",
+                "Test core concepts of network protocols and language fundamentals.",
+                10,
+                70,
+                json.dumps(["CS", "HTTP", "Python"]),
+                json.dumps(seed_q)
+            ))
+            conn.commit()
         conn.close()
 
-    def get_quizzes(self):
+    def get_all_quizzes(self):
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM quizzes ORDER BY created_at DESC")
         rows = cursor.fetchall()
-        quizzes = []
+        result = []
         for r in rows:
-            quizzes.append({
+            result.append({
                 "id": r["id"],
+                "joinCode": r["join_code"],
+                "teacherName": r["teacher_name"],
                 "title": r["title"],
                 "category": r["category"],
                 "description": r["description"],
                 "durationMinutes": r["duration_minutes"],
                 "passingScore": r["passing_score"],
-                "questions": json.loads(r["questions_json"])
+                "questions": json.loads(r["questions_json"]),
+                "createdAt": r["created_at"]
             })
         conn.close()
-        return quizzes
+        return result
+
+    def get_quiz_by_code(self, code):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM quizzes WHERE UPPER(join_code) = UPPER(?)", (code.strip(),))
+        r = cursor.fetchone()
+        conn.close()
+        if not r:
+            return None
+        return {
+            "id": r["id"],
+            "joinCode": r["join_code"],
+            "teacherName": r["teacher_name"],
+            "title": r["title"],
+            "category": r["category"],
+            "description": r["description"],
+            "durationMinutes": r["duration_minutes"],
+            "passingScore": r["passing_score"],
+            "questions": json.loads(r["questions_json"]),
+            "createdAt": r["created_at"]
+        }
 
     def save_quiz(self, quiz):
         conn = self.get_connection()
         cursor = conn.cursor()
+        join_code = quiz.get("joinCode") or f"QZ-{random.randint(1000, 9999)}"
         cursor.execute("""
-            INSERT INTO quizzes (id, title, category, description, duration_minutes, passing_score, tags, questions_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO quizzes (id, join_code, teacher_name, title, category, description, duration_minutes, passing_score, tags, questions_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
                 category = excluded.category,
@@ -100,6 +179,8 @@ class DatabaseManager:
                 questions_json = excluded.questions_json
         """, (
             quiz["id"],
+            join_code,
+            quiz.get("teacherName", "Prof. Alan"),
             quiz["title"],
             quiz.get("category", "General"),
             quiz.get("description", ""),
@@ -110,25 +191,29 @@ class DatabaseManager:
         ))
         conn.commit()
         conn.close()
+        return join_code
 
     def delete_quiz(self, quiz_id):
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM quizzes WHERE id = ?", (quiz_id,))
+        cursor.execute("DELETE FROM attempts WHERE quiz_id = ?", (quiz_id,))
         conn.commit()
         conn.close()
 
-    def save_attempt(self, attempt):
+    def record_attempt(self, attempt):
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO attempts (id, quiz_id, quiz_title, candidate_name, score, total_questions, percentage, passed, cheat_violations)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, score, total_questions, percentage, passed, cheat_violations)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             attempt["id"],
             attempt["quizId"],
+            attempt["joinCode"],
             attempt["quizTitle"],
-            attempt["candidateName"],
+            attempt["teacherName"],
+            attempt["studentName"],
             attempt["score"],
             attempt["totalQuestions"],
             attempt["percentage"],
@@ -138,17 +223,22 @@ class DatabaseManager:
         conn.commit()
         conn.close()
 
-    def get_attempts(self):
+    def get_teacher_reports(self, teacher_name=None):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM attempts ORDER BY submitted_at DESC")
+        if teacher_name:
+            cursor.execute("SELECT * FROM attempts WHERE teacher_name = ? ORDER BY submitted_at DESC", (teacher_name,))
+        else:
+            cursor.execute("SELECT * FROM attempts ORDER BY submitted_at DESC")
         rows = cursor.fetchall()
-        attempts = []
+        result = []
         for r in rows:
-            attempts.append({
+            result.append({
                 "id": r["id"],
                 "quizTitle": r["quiz_title"],
-                "candidateName": r["candidate_name"],
+                "joinCode": r["join_code"],
+                "teacherName": r["teacher_name"],
+                "studentName": r["student_name"],
                 "score": r["score"],
                 "totalQuestions": r["total_questions"],
                 "percentage": r["percentage"],
@@ -157,216 +247,382 @@ class DatabaseManager:
                 "submittedAt": r["submitted_at"]
             })
         conn.close()
-        return attempts
+        return result
+
+    def get_global_stats(self):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM quizzes")
+        total_quizzes = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*), SUM(passed) FROM attempts")
+        row = cursor.fetchone()
+        total_attempts = row[0] or 0
+        passed_attempts = row[1] or 0
+        pass_rate = round((passed_attempts / total_attempts) * 100) if total_attempts > 0 else 0
+
+        cursor.execute("SELECT COUNT(DISTINCT teacher_name) FROM quizzes")
+        active_teachers = cursor.fetchone()[0] or 1
+
+        cursor.execute("SELECT COUNT(DISTINCT student_name) FROM attempts")
+        active_students = cursor.fetchone()[0] or 0
+
+        conn.close()
+        return {
+            "totalQuizzes": total_quizzes,
+            "totalAttempts": total_attempts,
+            "passRate": pass_rate,
+            "activeTeachers": active_teachers,
+            "activeStudents": active_students
+        }
 
 
-class OnlineQuizApp(ctk.CTk):
+class OnlineQuizDesktopApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Online Quiz System — Pro Desktop")
-        self.geometry("1100x720")
-        self.minsize(950, 620)
+        self.title("Online Quiz System — Pro Desktop (Admin, Teacher & Student)")
+        self.geometry("1180x760")
+        self.minsize(1020, 680)
 
         self.db = DatabaseManager()
 
-        # Exam Session Variables
+        # Session State
+        self.current_role = "student" # 'admin', 'teacher', 'student'
+        self.teacher_name = "Prof. Alan Turing"
+        self.student_name = "Candidate Student"
+        
+        # Exam State
         self.active_quiz = None
         self.current_q_index = 0
         self.user_answers = {}
         self.time_left_seconds = 0
         self.timer_running = False
-        self.candidate_name = "Candidate"
         self.cheat_violations = 0
 
-        # Anti-cheat listener: bind window focus loss
-        self.bind("<FocusOut>", self.on_focus_loss)
+        # Anti-cheat tracking: Window focus out
+        self.bind("<FocusOut>", self.on_window_focus_loss)
 
-        # Setup Layout
+        # Configure Grid
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         self.setup_sidebar()
-        self.setup_content_frames()
+        self.setup_views()
 
-        # Show Candidate Arena by default
-        self.show_view("candidate")
+        # Default to Student Dashboard
+        self.switch_role("student")
 
     def setup_sidebar(self):
-        self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0)
+        self.sidebar_frame = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color="#0a0f1d")
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(5, weight=1)
+        self.sidebar_frame.grid_rowconfigure(7, weight=1)
 
-        # Brand Title
-        self.logo_label = ctk.CTkLabel(
-            self.sidebar_frame,
+        # Brand Banner
+        logo_box = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
+        logo_box.grid(row=0, column=0, padx=20, pady=(25, 15), sticky="w")
+
+        ctk.CTkLabel(
+            logo_box,
             text="⚡ QuizSphere",
-            font=ctk.CTkFont(size=20, weight="bold")
-        )
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w")
 
-        self.sub_label = ctk.CTkLabel(
-            self.sidebar_frame,
-            text="Desktop Edition 2.0",
+        ctk.CTkLabel(
+            logo_box,
+            text="Enterprise Desktop 3-Role Suite",
             font=ctk.CTkFont(size=11),
-            text_color="gray"
-        )
-        self.sub_label.grid(row=1, column=0, padx=20, pady=(0, 20))
+            text_color="#06b6d4"
+        ).pack(anchor="w")
 
-        # Nav Buttons
-        self.btn_candidate = ctk.CTkButton(
+        # Role Selector Dropdown
+        ctk.CTkLabel(
             self.sidebar_frame,
-            text="🎓 Candidate Arena",
+            text="ACTIVE DASHBOARD ROLE:",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color="#94a3b8"
+        ).grid(row=1, column=0, padx=20, pady=(10, 4), sticky="w")
+
+        self.role_selector = ctk.CTkOptionMenu(
+            self.sidebar_frame,
+            values=["🎓 Student", "👩‍🏫 Teacher / Faculty", "🛡️ Administrator"],
+            command=self.on_role_menu_select,
+            fg_color="#1e293b",
+            button_color="#334155",
+            font=ctk.CTkFont(size=12, weight="bold")
+        )
+        self.role_selector.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="ew")
+
+        # Sidebar Dynamic Navigation Buttons
+        self.nav_btn_1 = ctk.CTkButton(
+            self.sidebar_frame,
+            text="📝 My Quizzes",
             anchor="w",
-            command=lambda: self.show_view("candidate")
+            font=ctk.CTkFont(size=13),
+            command=lambda: self.on_nav_click(1)
         )
-        self.btn_candidate.grid(row=2, column=0, padx=15, pady=6, sticky="ew")
+        self.nav_btn_1.grid(row=3, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_examiner = ctk.CTkButton(
+        self.nav_btn_2 = ctk.CTkButton(
             self.sidebar_frame,
-            text="🛠️ Examiner Studio",
+            text="🤖 AI Quiz Generator",
             anchor="w",
             fg_color="transparent",
-            hover_color="#1f2937",
-            command=lambda: self.show_view("examiner")
+            hover_color="#1e293b",
+            font=ctk.CTkFont(size=13),
+            command=lambda: self.on_nav_click(2)
         )
-        self.btn_examiner.grid(row=3, column=0, padx=15, pady=6, sticky="ew")
+        self.nav_btn_2.grid(row=4, column=0, padx=15, pady=6, sticky="ew")
 
-        self.btn_analytics = ctk.CTkButton(
+        self.nav_btn_3 = ctk.CTkButton(
             self.sidebar_frame,
-            text="📊 Results History",
+            text="📊 Student Reports",
             anchor="w",
             fg_color="transparent",
-            hover_color="#1f2937",
-            command=lambda: self.show_view("analytics")
+            hover_color="#1e293b",
+            font=ctk.CTkFont(size=13),
+            command=lambda: self.on_nav_click(3)
         )
-        self.btn_analytics.grid(row=4, column=0, padx=15, pady=6, sticky="ew")
+        self.nav_btn_3.grid(row=5, column=0, padx=15, pady=6, sticky="ew")
 
-        # Bottom Status
-        self.status_label = ctk.CTkLabel(
-            self.sidebar_frame,
-            text="● Local SQLite Active",
-            font=ctk.CTkFont(size=11),
+        # Bottom System Indicator
+        status_box = ctk.CTkFrame(self.sidebar_frame, fg_color="#111827", corner_radius=8)
+        status_box.grid(row=8, column=0, padx=15, pady=20, sticky="ew")
+
+        ctk.CTkLabel(
+            status_box,
+            text="● SQLite Engine Active",
+            font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#10b981"
-        )
-        self.status_label.grid(row=6, column=0, padx=20, pady=20)
+        ).pack(padx=10, pady=(8, 2))
 
-    def setup_content_frames(self):
-        # 1. Candidate View (Lobby & Exam)
-        self.candidate_frame = ctk.CTkFrame(self, corner_radius=12)
-        self.candidate_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        ctk.CTkLabel(
+            status_box,
+            text="Desktop + Mobile Ready",
+            font=ctk.CTkFont(size=10),
+            text_color="gray"
+        ).pack(padx=10, pady=(0, 8))
 
-        # 2. Examiner View
-        self.examiner_frame = ctk.CTkFrame(self, corner_radius=12)
-        self.examiner_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+    def setup_views(self):
+        # Container for main views
+        self.container = ctk.CTkFrame(self, corner_radius=14, fg_color="#0f172a")
+        self.container.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        self.container.grid_columnconfigure(0, weight=1)
+        self.container.grid_rowconfigure(0, weight=1)
 
-        # 3. Analytics View
-        self.analytics_frame = ctk.CTkFrame(self, corner_radius=12)
-        self.analytics_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+    def on_role_menu_select(self, choice):
+        if "Student" in choice:
+            self.switch_role("student")
+        elif "Teacher" in choice:
+            self.switch_role("teacher")
+        elif "Admin" in choice:
+            self.switch_role("admin")
 
-    def show_view(self, view_name):
-        # Hide all frames
-        self.candidate_frame.grid_remove()
-        self.examiner_frame.grid_remove()
-        self.analytics_frame.grid_remove()
+    def switch_role(self, role):
+        self.current_role = role
+        
+        # Reset nav buttons depending on role
+        if role == "student":
+            self.role_selector.set("🎓 Student")
+            self.nav_btn_1.configure(text="🎯 Join & Take Quiz", fg_color=["#3B8ED0", "#1F6AA5"])
+            self.nav_btn_2.configure(text="📜 My Attempt History", fg_color="transparent")
+            self.nav_btn_3.grid_remove()
+            self.render_student_lobby()
 
-        # Reset button styles
-        for btn in [self.btn_candidate, self.btn_examiner, self.btn_analytics]:
+        elif role == "teacher":
+            self.role_selector.set("👩‍🏫 Teacher / Faculty")
+            self.nav_btn_1.configure(text="📚 Question Banks", fg_color=["#3B8ED0", "#1F6AA5"])
+            self.nav_btn_2.configure(text="🤖 AI Quiz Generator", fg_color="transparent")
+            self.nav_btn_3.grid()
+            self.nav_btn_3.configure(text="📊 Class Reports", fg_color="transparent")
+            self.render_teacher_quizzes()
+
+        elif role == "admin":
+            self.role_selector.set("🛡️ Administrator")
+            self.nav_btn_1.configure(text="📈 System Overview", fg_color=["#3B8ED0", "#1F6AA5"])
+            self.nav_btn_2.configure(text="📂 All Quizzes Management", fg_color="transparent")
+            self.nav_btn_3.grid()
+            self.nav_btn_3.configure(text="📋 Global Attempt Records", fg_color="transparent")
+            self.render_admin_overview()
+
+    def on_nav_click(self, btn_index):
+        for btn in [self.nav_btn_1, self.nav_btn_2, self.nav_btn_3]:
             btn.configure(fg_color="transparent")
 
-        if view_name == "candidate":
-            self.candidate_frame.grid()
-            self.btn_candidate.configure(fg_color=["#3B8ED0", "#1F6AA5"])
-            self.render_candidate_lobby()
-        elif view_name == "examiner":
-            self.examiner_frame.grid()
-            self.btn_examiner.configure(fg_color=["#3B8ED0", "#1F6AA5"])
-            self.render_examiner_studio()
-        elif view_name == "analytics":
-            self.analytics_frame.grid()
-            self.btn_analytics.configure(fg_color=["#3B8ED0", "#1F6AA5"])
-            self.render_analytics_history()
+        if btn_index == 1:
+            self.nav_btn_1.configure(fg_color=["#3B8ED0", "#1F6AA5"])
+            if self.current_role == "student":
+                self.render_student_lobby()
+            elif self.current_role == "teacher":
+                self.render_teacher_quizzes()
+            elif self.current_role == "admin":
+                self.render_admin_overview()
 
-    # -------------------------------------------------------------
-    # CANDIDATE ARENA & EXAM ENGINE
-    # -------------------------------------------------------------
-    def render_candidate_lobby(self):
-        for widget in self.candidate_frame.winfo_children():
+        elif btn_index == 2:
+            self.nav_btn_2.configure(fg_color=["#3B8ED0", "#1F6AA5"])
+            if self.current_role == "student":
+                self.render_student_history()
+            elif self.current_role == "teacher":
+                self.render_teacher_ai_generator()
+            elif self.current_role == "admin":
+                self.render_admin_quizzes()
+
+        elif btn_index == 3:
+            self.nav_btn_3.configure(fg_color=["#3B8ED0", "#1F6AA5"])
+            if self.current_role == "teacher":
+                self.render_teacher_reports()
+            elif self.current_role == "admin":
+                self.render_admin_attempts()
+
+    def clear_container(self):
+        for widget in self.container.winfo_children():
             widget.destroy()
 
-        header = ctk.CTkLabel(
-            self.candidate_frame,
-            text="Candidate Examination Arena",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
-        header.pack(anchor="w", padx=25, pady=(20, 5))
+    # =============================================================
+    # 1. STUDENT DASHBOARD & ASSESSMENT ARENA
+    # =============================================================
+    def render_student_lobby(self):
+        self.clear_container()
 
-        sub = ctk.CTkLabel(
-            self.candidate_frame,
-            text="Select an assessment below to launch a proctored examination session.",
+        header_frame = ctk.CTkFrame(self.container, fg_color="transparent")
+        header_frame.pack(fill="x", padx=30, pady=(25, 10))
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Student Examination Dashboard",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Join an exam using your teacher's Quiz Code or browse available tests.",
             font=ctk.CTkFont(size=13),
-            text_color="gray"
+            text_color="#94a3b8"
+        ).pack(anchor="w")
+
+        # Join with Quiz Code Box
+        code_box = ctk.CTkFrame(self.container, fg_color="#1e293b", corner_radius=12)
+        code_box.pack(fill="x", padx=30, pady=15)
+
+        ctk.CTkLabel(
+            code_box,
+            text="🔑 Enter Quiz Code to Join:",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#38bdf8"
+        ).pack(side="left", padx=20, pady=15)
+
+        self.quiz_code_entry = ctk.CTkEntry(
+            code_box,
+            placeholder_text="e.g. QZ-1001",
+            width=180,
+            font=ctk.CTkFont(size=14, weight="bold")
         )
-        sub.pack(anchor="w", padx=25, pady=(0, 20))
+        self.quiz_code_entry.pack(side="left", padx=10, pady=15)
 
-        # Candidate Name Entry
-        name_box = ctk.CTkFrame(self.candidate_frame, fg_color="#182234", corner_radius=10)
-        name_box.pack(fill="x", padx=25, pady=(0, 15))
+        ctk.CTkLabel(code_box, text="Your Name:", font=ctk.CTkFont(size=13)).pack(side="left", padx=(15, 5))
+        self.student_name_entry = ctk.CTkEntry(code_box, width=180)
+        self.student_name_entry.insert(0, self.student_name)
+        self.student_name_entry.pack(side="left", padx=5)
 
-        name_lbl = ctk.CTkLabel(name_box, text="Candidate Name:", font=ctk.CTkFont(weight="bold"))
-        name_lbl.pack(side="left", padx=15, pady=10)
+        join_btn = ctk.CTkButton(
+            code_box,
+            text="Join Assessment ⚡",
+            fg_color="#06b6d4",
+            hover_color="#0891b2",
+            text_color="#030712",
+            font=ctk.CTkFont(weight="bold"),
+            command=self.join_quiz_via_code
+        )
+        join_btn.pack(side="left", padx=15, pady=15)
 
-        self.name_entry = ctk.CTkEntry(name_box, width=250, placeholder_text="Enter your full name")
-        self.name_entry.insert(0, self.candidate_name)
-        self.name_entry.pack(side="left", padx=10, pady=10)
+        # Available Quizzes List
+        ctk.CTkLabel(
+            self.container,
+            text="Available Faculty Quizzes:",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#f8fafc"
+        ).pack(anchor="w", padx=30, pady=(15, 8))
 
-        # Quizzes Scrollable Container
-        scroll = ctk.CTkScrollableFrame(self.candidate_frame, corner_radius=10)
-        scroll.pack(fill="both", expand=True, padx=25, pady=(0, 20))
+        scroll = ctk.CTkScrollableFrame(self.container, corner_radius=10, fg_color="#111827")
+        scroll.pack(fill="both", expand=True, padx=30, pady=(0, 25))
 
-        quizzes = self.db.get_quizzes()
+        quizzes = self.db.get_all_quizzes()
         if not quizzes:
-            ctk.CTkLabel(scroll, text="No quizzes found. Please create one in Examiner Studio.").pack(pady=40)
+            ctk.CTkLabel(scroll, text="No active quizzes found. Ask your teacher to publish one.").pack(pady=40)
             return
 
         for q in quizzes:
             card = ctk.CTkFrame(scroll, corner_radius=10, fg_color="#1e293b")
-            card.pack(fill="x", pady=8, padx=5)
+            card.pack(fill="x", pady=8, padx=10)
 
-            title = ctk.CTkLabel(card, text=q["title"], font=ctk.CTkFont(size=16, weight="bold"))
-            title.pack(anchor="w", padx=15, pady=(12, 2))
+            title_row = ctk.CTkFrame(card, fg_color="transparent")
+            title_row.pack(fill="x", padx=15, pady=(12, 2))
 
-            desc = ctk.CTkLabel(card, text=q.get("description", ""), text_color="gray", font=ctk.CTkFont(size=12))
-            desc.pack(anchor="w", padx=15, pady=(0, 8))
+            ctk.CTkLabel(
+                title_row,
+                text=q["title"],
+                font=ctk.CTkFont(size=16, weight="bold")
+            ).pack(side="left")
 
-            meta_text = f"⏱️ Duration: {q['durationMinutes']} mins   |   ❓ Questions: {len(q['questions'])}   |   🎯 Pass Score: {q['passingScore']}%"
-            meta = ctk.CTkLabel(card, text=meta_text, font=ctk.CTkFont(size=12), text_color="#38bdf8")
-            meta.pack(anchor="w", padx=15, pady=(0, 10))
+            ctk.CTkLabel(
+                title_row,
+                text=f"Code: {q['joinCode']}",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#06b6d4",
+                fg_color="#082f49",
+                corner_radius=6,
+                padx=8,
+                pady=2
+            ).pack(side="right")
+
+            ctk.CTkLabel(
+                card,
+                text=f"Instructor: {q['teacherName']}   |   Category: {q['category']}",
+                font=ctk.CTkFont(size=12),
+                text_color="#94a3b8"
+            ).pack(anchor="w", padx=15, pady=(0, 6))
+
+            meta_text = f"⏱️ Duration: {q['durationMinutes']} mins   |   ❓ Questions: {len(q['questions'])}   |   🎯 Passing: {q['passingScore']}%"
+            ctk.CTkLabel(card, text=meta_text, font=ctk.CTkFont(size=12), text_color="#38bdf8").pack(anchor="w", padx=15, pady=(0, 10))
 
             start_btn = ctk.CTkButton(
                 card,
-                text="Start Assessment ⚡",
-                fg_color="#06b6d4",
-                hover_color="#0891b2",
-                text_color="#030712",
+                text="Start Test 🚀",
+                fg_color="#6366f1",
+                hover_color="#4f46e5",
                 font=ctk.CTkFont(weight="bold"),
-                command=lambda quiz=q: self.start_exam_session(quiz)
+                command=lambda quiz=q: self.start_student_exam(quiz)
             )
             start_btn.pack(anchor="e", padx=15, pady=(0, 12))
 
-    def on_focus_loss(self, event):
-        """Proctoring violation listener when window loses focus."""
+    def join_quiz_via_code(self):
+        code = self.quiz_code_entry.get().strip()
+        if not code:
+            messagebox.showwarning("Enter Code", "Please enter a valid Quiz Code (e.g. QZ-1001).")
+            return
+
+        quiz = self.db.get_quiz_by_code(code)
+        if not quiz:
+            messagebox.showerror("Not Found", f"No quiz found with code '{code}'. Please check with your teacher.")
+            return
+
+        self.student_name = self.student_name_entry.get().strip() or "Candidate Student"
+        self.start_student_exam(quiz)
+
+    def on_window_focus_loss(self, event):
+        """Proctoring violation listener when student switches windows or tabs."""
         if self.timer_running and self.active_quiz:
             self.cheat_violations += 1
-            if hasattr(self, "violation_lbl") and self.violation_lbl.winfo_exists():
-                self.violation_lbl.configure(text=f"⚠️ Violations: {self.cheat_violations}")
+            if hasattr(self, "cheat_badge") and self.cheat_badge.winfo_exists():
+                self.cheat_badge.configure(text=f"⚠️ Anti-Cheat Violations: {self.cheat_violations}")
             messagebox.showwarning(
-                "Anti-Cheat Alert",
-                f"Window focus lost! Focus outside examination window is strictly recorded.\nTotal Violations: {self.cheat_violations}"
+                "Proctoring Violation",
+                f"Window focus lost! Focus-out events are recorded and reported to your teacher.\nViolations: {self.cheat_violations}"
             )
 
-    def start_exam_session(self, quiz):
-        self.candidate_name = self.name_entry.get().strip() or "Candidate"
+    def start_student_exam(self, quiz):
         self.active_quiz = quiz
         self.current_q_index = 0
         self.user_answers = {}
@@ -374,382 +630,603 @@ class OnlineQuizApp(ctk.CTk):
         self.time_left_seconds = quiz["durationMinutes"] * 60
         self.timer_running = True
 
-        self.render_active_exam()
-        self.tick_timer()
+        self.render_exam_arena()
+        self.tick_exam_timer()
 
-    def tick_timer(self):
+    def tick_exam_timer(self):
         if not self.timer_running:
             return
 
         mins = self.time_left_seconds // 60
         secs = self.time_left_seconds % 60
-        time_str = f"⏱️ {mins:02d}:{secs:02d}"
+        time_text = f"⏱️ {mins:02d}:{secs:02d}"
 
-        if hasattr(self, "timer_lbl") and self.timer_lbl.winfo_exists():
-            self.timer_lbl.configure(text=time_str)
+        if hasattr(self, "timer_display") and self.timer_display.winfo_exists():
+            self.timer_display.configure(text=time_text)
             if self.time_left_seconds <= 60:
-                self.timer_lbl.configure(text_color="#ef4444")
+                self.timer_display.configure(text_color="#ef4444")
             else:
-                self.timer_lbl.configure(text_color="#06b6d4")
+                self.timer_display.configure(text_color="#06b6d4")
 
         if self.time_left_seconds <= 0:
             self.timer_running = False
-            messagebox.showinfo("Time Expired", "Exam time is up! Submitting answers automatically.")
-            self.submit_exam()
+            messagebox.showinfo("Time Up", "Your exam time has expired! Finalizing answers.")
+            self.finalize_student_submission()
         else:
             self.time_left_seconds -= 1
-            self.after(1000, self.tick_timer)
+            self.after(1000, self.tick_exam_timer)
 
-    def render_active_exam(self):
-        for widget in self.candidate_frame.winfo_children():
-            widget.destroy()
+    def render_exam_arena(self):
+        self.clear_container()
 
-        # Top Bar
-        top_bar = ctk.CTkFrame(self.candidate_frame, fg_color="#0f172a", corner_radius=10)
-        top_bar.pack(fill="x", padx=20, pady=(15, 10))
+        # Exam Header Bar
+        top_bar = ctk.CTkFrame(self.container, fg_color="#1e293b", corner_radius=10)
+        top_bar.pack(fill="x", padx=25, pady=(20, 10))
 
-        title = ctk.CTkLabel(top_bar, text=self.active_quiz["title"], font=ctk.CTkFont(size=16, weight="bold"))
-        title.pack(side="left", padx=15, pady=10)
+        ctk.CTkLabel(
+            top_bar,
+            text=f"Exam: {self.active_quiz['title']}",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#ffffff"
+        ).pack(side="left", padx=15, pady=12)
 
-        self.violation_lbl = ctk.CTkLabel(top_bar, text="⚠️ Violations: 0", text_color="#fca5a5", font=ctk.CTkFont(weight="bold"))
-        self.violation_lbl.pack(side="left", padx=20, pady=10)
+        self.cheat_badge = ctk.CTkLabel(
+            top_bar,
+            text=f"⚠️ Anti-Cheat Violations: {self.cheat_violations}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#fca5a5"
+        )
+        self.cheat_badge.pack(side="left", padx=20, pady=12)
 
-        self.timer_lbl = ctk.CTkLabel(top_bar, text="⏱️ 00:00", font=ctk.CTkFont(size=18, weight="bold"), text_color="#06b6d4")
-        self.timer_lbl.pack(side="right", padx=15, pady=10)
+        self.timer_display = ctk.CTkLabel(
+            top_bar,
+            text="⏱️ 00:00",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#06b6d4"
+        )
+        self.timer_display.pack(side="right", padx=15, pady=12)
 
-        # Question Content Area
+        # Question Content Card
         q = self.active_quiz["questions"][self.current_q_index]
 
-        q_frame = ctk.CTkFrame(self.candidate_frame, fg_color="#1e293b", corner_radius=10)
-        q_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        q_card = ctk.CTkFrame(self.container, fg_color="#182234", corner_radius=12)
+        q_card.pack(fill="both", expand=True, padx=25, pady=10)
 
-        q_num = ctk.CTkLabel(
-            q_frame,
+        ctk.CTkLabel(
+            q_card,
             text=f"Question {self.current_q_index + 1} of {len(self.active_quiz['questions'])}",
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color="#818cf8"
-        )
-        q_num.pack(anchor="w", padx=20, pady=(15, 5))
+        ).pack(anchor="w", padx=25, pady=(20, 5))
 
-        q_text = ctk.CTkLabel(
-            q_frame,
+        ctk.CTkLabel(
+            q_card,
             text=q["text"],
-            font=ctk.CTkFont(size=16, weight="bold"),
-            wraplength=750,
-            justify="left"
-        )
-        q_text.pack(anchor="w", padx=20, pady=(5, 15))
+            font=ctk.CTkFont(size=17, weight="bold"),
+            wraplength=800,
+            justify="left",
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=25, pady=(5, 15))
 
-        # Code snippet if present
         if q.get("code"):
-            code_box = ctk.CTkTextbox(q_frame, height=90, font=ctk.CTkFont(family="Consolas", size=12), text_color="#38bdf8", fg_color="#050811")
+            code_box = ctk.CTkTextbox(q_card, height=85, font=ctk.CTkFont(family="Consolas", size=12), text_color="#38bdf8", fg_color="#050811")
             code_box.insert("1.0", q["code"])
             code_box.configure(state="disabled")
-            code_box.pack(fill="x", padx=20, pady=(0, 15))
+            code_box.pack(fill="x", padx=25, pady=(0, 15))
 
         # Options Radio Group
-        self.selected_opt_var = tk.IntVar(value=self.user_answers.get(q["id"], -1))
+        self.selected_radio_var = tk.IntVar(value=self.user_answers.get(q["id"], -1))
+        options_panel = ctk.CTkFrame(q_card, fg_color="transparent")
+        options_panel.pack(fill="x", padx=25, pady=5)
 
-        options_container = ctk.CTkFrame(q_frame, fg_color="transparent")
-        options_container.pack(fill="x", padx=20, pady=5)
-
-        for idx, opt_text in enumerate(q["options"]):
+        for opt_idx, opt_text in enumerate(q["options"]):
             radio = ctk.CTkRadioButton(
-                options_container,
+                options_panel,
                 text=opt_text,
-                variable=self.selected_opt_var,
-                value=idx,
+                variable=self.selected_radio_var,
+                value=opt_idx,
                 font=ctk.CTkFont(size=14),
-                command=lambda opt_idx=idx: self.record_answer(q["id"], opt_idx)
+                command=lambda idx=opt_idx: self.user_answers.update({q["id"]: idx})
             )
-            radio.pack(anchor="w", pady=6)
+            radio.pack(anchor="w", pady=7)
 
-        # Bottom Action Bar
-        action_bar = ctk.CTkFrame(self.candidate_frame, fg_color="transparent")
-        action_bar.pack(fill="x", padx=20, pady=(10, 15))
+        # Bottom Controls Bar
+        action_bar = ctk.CTkFrame(self.container, fg_color="transparent")
+        action_bar.pack(fill="x", padx=25, pady=(10, 20))
 
         prev_btn = ctk.CTkButton(
             action_bar,
             text="← Previous",
             state="normal" if self.current_q_index > 0 else "disabled",
-            command=self.prev_question
+            command=self.student_prev_q
         )
         prev_btn.pack(side="left")
 
-        finish_btn = ctk.CTkButton(
+        finish_early_btn = ctk.CTkButton(
             action_bar,
-            text="Finish Early",
+            text="Submit Assessment Early",
             fg_color="#ef4444",
             hover_color="#dc2626",
-            command=self.confirm_finish_exam
+            command=self.student_confirm_submit
         )
-        finish_btn.pack(side="left", padx=15)
+        finish_early_btn.pack(side="left", padx=15)
 
         is_last = self.current_q_index == len(self.active_quiz["questions"]) - 1
-        next_text = "Submit Exam ✔️" if is_last else "Next Question →"
-        next_cmd = self.confirm_finish_exam if is_last else self.next_question
-
         next_btn = ctk.CTkButton(
             action_bar,
-            text=next_text,
+            text="Finalize & Submit ✔️" if is_last else "Next Question →",
             fg_color="#10b981" if is_last else ["#3B8ED0", "#1F6AA5"],
-            command=next_cmd
+            command=self.student_confirm_submit if is_last else self.student_next_q
         )
         next_btn.pack(side="right")
 
-    def record_answer(self, q_id, opt_idx):
-        self.user_answers[q_id] = opt_idx
-
-    def prev_question(self):
+    def student_prev_q(self):
         if self.current_q_index > 0:
             self.current_q_index -= 1
-            self.render_active_exam()
+            self.render_exam_arena()
 
-    def next_question(self):
+    def student_next_q(self):
         if self.current_q_index < len(self.active_quiz["questions"]) - 1:
             self.current_q_index += 1
-            self.render_active_exam()
+            self.render_exam_arena()
 
-    def confirm_finish_exam(self):
+    def student_confirm_submit(self):
         answered = len(self.user_answers)
         total = len(self.active_quiz["questions"])
-        msg = f"Candidate: {self.candidate_name}\nAnswered: {answered} of {total}\nProctor Violations: {self.cheat_violations}\n\nAre you sure you want to finalize and submit?"
-        if messagebox.askyesno("Confirm Submission", msg):
-            self.submit_exam()
+        msg = f"Candidate: {self.student_name}\nAnswered: {answered} / {total}\nProctor Violations: {self.cheat_violations}\n\nConfirm final submission to {self.active_quiz['teacherName']}?"
+        if messagebox.askyesno("Submit Exam", msg):
+            self.finalize_student_submission()
 
-    def submit_exam(self):
+    def finalize_student_submission(self):
         self.timer_running = False
-        correct = 0
+        correct_count = 0
         questions = self.active_quiz["questions"]
         for q in questions:
             if self.user_answers.get(q["id"]) == q["correct"]:
-                correct += 1
+                correct_count += 1
 
         total = len(questions)
-        pct = round((correct / total) * 100) if total > 0 else 0
+        pct = round((correct_count / total) * 100) if total > 0 else 0
         passed = pct >= self.active_quiz["passingScore"]
 
         attempt = {
             "id": f"att-{int(time.time()*1000)}",
             "quizId": self.active_quiz["id"],
+            "joinCode": self.active_quiz["joinCode"],
             "quizTitle": self.active_quiz["title"],
-            "candidateName": self.candidate_name,
-            "score": correct,
+            "teacherName": self.active_quiz["teacherName"],
+            "studentName": self.student_name,
+            "score": correct_count,
             "totalQuestions": total,
             "percentage": pct,
             "passed": passed,
             "cheatViolations": self.cheat_violations
         }
 
-        self.db.save_attempt(attempt)
-        self.render_result_screen(attempt)
+        # Save to database
+        self.db.record_attempt(attempt)
+        self.render_student_report_card(attempt)
 
-    def render_result_screen(self, attempt):
-        for widget in self.candidate_frame.winfo_children():
-            widget.destroy()
+    def render_student_report_card(self, attempt):
+        self.clear_container()
 
-        card = ctk.CTkFrame(self.candidate_frame, fg_color="#111827", corner_radius=12)
-        card.pack(fill="both", expand=True, padx=30, pady=30)
+        card = ctk.CTkFrame(self.container, fg_color="#111827", corner_radius=14)
+        card.pack(fill="both", expand=True, padx=40, pady=30)
 
         status_text = "PASSED 🎉" if attempt["passed"] else "NEEDS IMPROVEMENT ⚠️"
         status_color = "#10b981" if attempt["passed"] else "#ef4444"
 
-        badge = ctk.CTkLabel(card, text=status_text, font=ctk.CTkFont(size=22, weight="bold"), text_color=status_color)
-        badge.pack(pady=(30, 5))
+        ctk.CTkLabel(card, text=status_text, font=ctk.CTkFont(size=24, weight="bold"), text_color=status_color).pack(pady=(25, 5))
+        ctk.CTkLabel(card, text=attempt["quizTitle"], font=ctk.CTkFont(size=20, weight="bold")).pack(pady=4)
+        ctk.CTkLabel(card, text=f"Instructor: {attempt['teacherName']} (Report Synced)", text_color="#38bdf8").pack(pady=2)
 
-        title = ctk.CTkLabel(card, text=attempt["quizTitle"], font=ctk.CTkFont(size=18, weight="bold"))
-        title.pack(pady=5)
+        score_text = f"{attempt['score']} / {attempt['totalQuestions']}  ({attempt['percentage']}%)"
+        ctk.CTkLabel(card, text=score_text, font=ctk.CTkFont(size=32, weight="bold"), text_color="#ffffff").pack(pady=15)
 
-        candidate = ctk.CTkLabel(card, text=f"Candidate: {attempt['candidateName']}", font=ctk.CTkFont(size=14), text_color="#38bdf8")
-        candidate.pack(pady=5)
+        info_frame = ctk.CTkFrame(card, fg_color="#1f2937", corner_radius=8)
+        info_frame.pack(padx=30, pady=10, fill="x")
 
-        score_lbl = ctk.CTkLabel(card, text=f"Score: {attempt['score']} / {attempt['totalQuestions']} ({attempt['percentage']}%)", font=ctk.CTkFont(size=24, weight="bold"))
-        score_lbl.pack(pady=15)
+        ctk.CTkLabel(info_frame, text=f"Candidate: {attempt['studentName']}   |   Violations Recorded: {attempt['cheatViolations']}").pack(pady=10)
 
-        cheat_lbl = ctk.CTkLabel(card, text=f"Proctor Violations Logged: {attempt['cheatViolations']}", text_color="#fca5a5")
-        cheat_lbl.pack(pady=5)
+        # Questions Review Scroll
+        review_scroll = ctk.CTkScrollableFrame(card, height=220, corner_radius=8, fg_color="#0f172a")
+        review_scroll.pack(fill="both", expand=True, padx=30, pady=10)
+
+        for idx, q in enumerate(self.active_quiz["questions"]):
+            user_choice = self.user_answers.get(q["id"])
+            is_correct = user_choice == q["correct"]
+
+            q_row = ctk.CTkFrame(review_scroll, fg_color="#1e293b", corner_radius=6)
+            q_row.pack(fill="x", pady=4, padx=5)
+
+            status_icon = "✅ Correct" if is_correct else ("⚠️ Skipped" if user_choice is None else "❌ Incorrect")
+            color = "#10b981" if is_correct else "#ef4444"
+
+            ctk.CTkLabel(q_row, text=f"Q{idx+1}: {q['text'][:55]}...   [{status_icon}]", text_color=color, font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(6, 2))
+            ctk.CTkLabel(q_row, text=f"Correct Answer: {q['options'][q['correct']]}", text_color="gray", font=ctk.CTkFont(size=11)).pack(anchor="w", padx=10, pady=(0, 6))
 
         back_btn = ctk.CTkButton(
             card,
-            text="Back to Lobby",
-            command=self.render_candidate_lobby
+            text="Return to Student Dashboard",
+            command=self.render_student_lobby
         )
-        back_btn.pack(pady=25)
+        back_btn.pack(pady=(10, 20))
 
-    # -------------------------------------------------------------
-    # EXAMINER STUDIO
-    # -------------------------------------------------------------
-    def render_examiner_studio(self):
-        for widget in self.examiner_frame.winfo_children():
-            widget.destroy()
+    def render_student_history(self):
+        self.clear_container()
 
-        header = ctk.CTkLabel(
-            self.examiner_frame,
-            text="Examiner Studio & Quiz Builder",
-            font=ctk.CTkFont(size=22, weight="bold")
+        ctk.CTkLabel(
+            self.container,
+            text="My Examination Attempts & Gradebook",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=30, pady=(25, 5))
+
+        scroll = ctk.CTkScrollableFrame(self.container, corner_radius=10, fg_color="#111827")
+        scroll.pack(fill="both", expand=True, padx=30, pady=(15, 25))
+
+        reports = self.db.get_teacher_reports()
+        if not reports:
+            ctk.CTkLabel(scroll, text="No tests completed yet.").pack(pady=40)
+            return
+
+        for r in reports:
+            card = ctk.CTkFrame(scroll, corner_radius=10, fg_color="#1e293b")
+            card.pack(fill="x", pady=6, padx=10)
+
+            status_color = "#10b981" if r["passed"] else "#ef4444"
+            ctk.CTkLabel(card, text=f"{r['quizTitle']} — {r['score']}/{r['totalQuestions']} ({r['percentage']}%)", font=ctk.CTkFont(size=15, weight="bold"), text_color=status_color).pack(anchor="w", padx=15, pady=(10, 2))
+            meta = f"Teacher: {r['teacherName']}   |   Code: {r['joinCode']}   |   Violations: {r['cheatViolations']}   |   Date: {r['submittedAt']}"
+            ctk.CTkLabel(card, text=meta, font=ctk.CTkFont(size=12), text_color="#94a3b8").pack(anchor="w", padx=15, pady=(0, 10))
+
+    # =============================================================
+    # 2. TEACHER / FACULTY DASHBOARD (Manual + AI Generator + Reports)
+    # =============================================================
+    def render_teacher_quizzes(self):
+        self.clear_container()
+
+        header = ctk.CTkFrame(self.container, fg_color="transparent")
+        header.pack(fill="x", padx=30, pady=(25, 10))
+
+        ctk.CTkLabel(
+            header,
+            text="Teacher & Faculty Question Banks",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(side="left")
+
+        actions = ctk.CTkFrame(header, fg_color="transparent")
+        actions.pack(side="right")
+
+        ai_btn = ctk.CTkButton(
+            actions,
+            text="🤖 Generate with AI",
+            fg_color="#8b5cf6",
+            hover_color="#7c3aed",
+            command=self.render_teacher_ai_generator
         )
-        header.pack(anchor="w", padx=25, pady=(20, 5))
+        ai_btn.pack(side="left", padx=5)
 
-        sub = ctk.CTkLabel(
-            self.examiner_frame,
-            text="Create, edit, and organize question banks directly on your system.",
-            font=ctk.CTkFont(size=13),
-            text_color="gray"
+        manual_btn = ctk.CTkButton(
+            actions,
+            text="+ Manual Create",
+            fg_color="#06b6d4",
+            hover_color="#0891b2",
+            text_color="#030712",
+            font=ctk.CTkFont(weight="bold"),
+            command=self.open_teacher_manual_quiz_dialog
         )
-        sub.pack(anchor="w", padx=25, pady=(0, 15))
+        manual_btn.pack(side="left", padx=5)
 
-        top_actions = ctk.CTkFrame(self.examiner_frame, fg_color="transparent")
-        top_actions.pack(fill="x", padx=25, pady=(0, 15))
+        # Quizzes Catalog
+        scroll = ctk.CTkScrollableFrame(self.container, corner_radius=10, fg_color="#111827")
+        scroll.pack(fill="both", expand=True, padx=30, pady=(15, 25))
 
-        new_btn = ctk.CTkButton(
-            top_actions,
-            text="+ Create New Quiz",
-            fg_color="#6366f1",
-            hover_color="#4f46e5",
-            command=self.open_new_quiz_dialog
-        )
-        new_btn.pack(side="left")
+        quizzes = self.db.get_all_quizzes()
+        if not quizzes:
+            ctk.CTkLabel(scroll, text="No quizzes created yet. Use '+ Manual Create' or '🤖 Generate with AI'.").pack(pady=40)
+            return
 
-        # Scrollable Quizzes
-        scroll = ctk.CTkScrollableFrame(self.examiner_frame, corner_radius=10)
-        scroll.pack(fill="both", expand=True, padx=25, pady=(0, 20))
-
-        quizzes = self.db.get_quizzes()
         for q in quizzes:
             card = ctk.CTkFrame(scroll, corner_radius=10, fg_color="#1e293b")
-            card.pack(fill="x", pady=6, padx=5)
+            card.pack(fill="x", pady=8, padx=10)
 
-            ctk.CTkLabel(card, text=q["title"], font=ctk.CTkFont(size=15, weight="bold")).pack(anchor="w", padx=15, pady=(10, 2))
-            ctk.CTkLabel(card, text=f"{q['category']} | {len(q['questions'])} Questions | {q['durationMinutes']} mins", text_color="gray", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15, pady=(0, 8))
+            top = ctk.CTkFrame(card, fg_color="transparent")
+            top.pack(fill="x", padx=15, pady=(10, 2))
 
-            action_row = ctk.CTkFrame(card, fg_color="transparent")
-            action_row.pack(anchor="e", padx=15, pady=(0, 10))
+            ctk.CTkLabel(top, text=q["title"], font=ctk.CTkFont(size=16, weight="bold")).pack(side="left")
+            
+            # Prominent Join Code Badge for Students
+            code_badge = ctk.CTkLabel(
+                top,
+                text=f"Student Code: {q['joinCode']}",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#38bdf8",
+                fg_color="#082f49",
+                corner_radius=6,
+                padx=10,
+                pady=4
+            )
+            code_badge.pack(side="right")
+
+            meta = f"Category: {q['category']}   |   Questions: {len(q['questions'])}   |   Duration: {q['durationMinutes']}m   |   Pass: {q['passingScore']}%"
+            ctk.CTkLabel(card, text=meta, text_color="#94a3b8", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15, pady=(0, 10))
+
+            btn_row = ctk.CTkFrame(card, fg_color="transparent")
+            btn_row.pack(anchor="e", padx=15, pady=(0, 10))
 
             del_btn = ctk.CTkButton(
-                action_row,
+                btn_row,
                 text="Delete",
                 width=75,
                 fg_color="#ef4444",
                 hover_color="#dc2626",
-                command=lambda quiz_id=q["id"]: self.delete_quiz_action(quiz_id)
+                command=lambda qid=q["id"]: self.delete_teacher_quiz(qid)
             )
             del_btn.pack(side="right", padx=5)
 
-    def delete_quiz_action(self, quiz_id):
-        if messagebox.askyesno("Delete Quiz", "Are you sure you want to delete this quiz?"):
+    def delete_teacher_quiz(self, quiz_id):
+        if messagebox.askyesno("Delete Quiz", "Delete this quiz and all student reports?"):
             self.db.delete_quiz(quiz_id)
-            self.render_examiner_studio()
+            self.render_teacher_quizzes()
 
-    def open_new_quiz_dialog(self):
+    # AI Quiz Generator View
+    def render_teacher_ai_generator(self):
+        self.clear_container()
+
+        ctk.CTkLabel(
+            self.container,
+            text="🤖 AI-Powered Quiz Generator",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=30, pady=(25, 5))
+
+        ctk.CTkLabel(
+            self.container,
+            text="Provide your subject or syllabus topic, and the AI engine will construct structured questions, distractors, and explanations.",
+            font=ctk.CTkFont(size=13),
+            text_color="#94a3b8"
+        ).pack(anchor="w", padx=30, pady=(0, 20))
+
+        form_box = ctk.CTkFrame(self.container, fg_color="#182234", corner_radius=12)
+        form_box.pack(fill="x", padx=30, pady=10)
+
+        # Subject / Topic
+        ctk.CTkLabel(form_box, text="Subject / Topic:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=20, pady=(15, 2))
+        self.ai_topic_entry = ctk.CTkEntry(form_box, placeholder_text="e.g. Python Object-Oriented Programming, Operating Systems, Database Normalization")
+        self.ai_topic_entry.insert(0, "Python Data Structures & Memory Management")
+        self.ai_topic_entry.pack(fill="x", padx=20, pady=(0, 12))
+
+        # Row with count & difficulty
+        row = ctk.CTkFrame(form_box, fg_color="transparent")
+        row.pack(fill="x", padx=20, pady=(0, 15))
+
+        ctk.CTkLabel(row, text="Questions Count:").pack(side="left", padx=(0, 5))
+        self.ai_count_selector = ctk.CTkOptionMenu(row, values=["3", "5", "8", "10"], width=90)
+        self.ai_count_selector.set("5")
+        self.ai_count_selector.pack(side="left", padx=(0, 25))
+
+        ctk.CTkLabel(row, text="Difficulty:").pack(side="left", padx=(0, 5))
+        self.ai_diff_selector = ctk.CTkOptionMenu(row, values=["Beginner", "Medium", "Advanced"], width=110)
+        self.ai_diff_selector.set("Medium")
+        self.ai_diff_selector.pack(side="left", padx=(0, 25))
+
+        ctk.CTkLabel(row, text="Duration (Mins):").pack(side="left", padx=(0, 5))
+        self.ai_dur_entry = ctk.CTkEntry(row, width=70)
+        self.ai_dur_entry.insert(0, "10")
+        self.ai_dur_entry.pack(side="left")
+
+        gen_btn = ctk.CTkButton(
+            form_box,
+            text="⚡ Generate & Publish Quiz with AI",
+            fg_color="#8b5cf6",
+            hover_color="#7c3aed",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            command=self.run_ai_quiz_generation
+        )
+        gen_btn.pack(padx=20, pady=(5, 20), fill="x")
+
+    def run_ai_quiz_generation(self):
+        topic = self.ai_topic_entry.get().strip() or "General Science"
+        count = int(self.ai_count_selector.get())
+        diff = self.ai_diff_selector.get()
+        dur = int(self.ai_dur_entry.get().strip() or 10)
+
+        # Generate questions
+        questions = generate_quiz_with_ai(topic=topic, num_questions=count, difficulty=diff)
+
+        new_quiz = {
+            "id": f"quiz-ai-{int(time.time()*1000)}",
+            "title": f"{topic} ({diff})",
+            "category": "Academic / AI Generated",
+            "description": f"Curriculum quiz generated for {topic} with {count} questions at {diff} level.",
+            "durationMinutes": dur,
+            "passingScore": 70,
+            "teacherName": self.teacher_name,
+            "tags": [topic.split()[0], diff, "AI-Generated"],
+            "questions": questions
+        }
+
+        join_code = self.db.save_quiz(new_quiz)
+        messagebox.showinfo(
+            "Quiz Generated! 🎉",
+            f"Successfully created '{new_quiz['title']}' with {len(questions)} questions!\n\n🔑 Student Join Code: {join_code}\n\nShare this code with your students to take the exam!"
+        )
+        self.render_teacher_quizzes()
+
+    # Teacher Manual Quiz Dialog
+    def open_teacher_manual_quiz_dialog(self):
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Create Assessment")
-        dialog.geometry("600x650")
+        dialog.title("Manual Assessment Builder")
+        dialog.geometry("620x680")
 
-        ctk.CTkLabel(dialog, text="New Quiz Details", font=ctk.CTkFont(size=18, weight="bold")).pack(pady=15)
+        ctk.CTkLabel(dialog, text="Create New Quiz", font=ctk.CTkFont(size=18, weight="bold")).pack(pady=15)
 
-        title_e = ctk.CTkEntry(dialog, placeholder_text="Quiz Title", width=450)
-        title_e.pack(pady=8)
+        title_e = ctk.CTkEntry(dialog, placeholder_text="Quiz Title (e.g. Database Transactions)", width=480)
+        title_e.pack(pady=6)
 
-        cat_e = ctk.CTkEntry(dialog, placeholder_text="Category (e.g. Python, Algorithms)", width=450)
-        cat_e.pack(pady=8)
+        cat_e = ctk.CTkEntry(dialog, placeholder_text="Category (e.g. Computer Science)", width=480)
+        cat_e.pack(pady=6)
 
-        dur_e = ctk.CTkEntry(dialog, placeholder_text="Duration in minutes (e.g. 10)", width=450)
-        dur_e.insert(0, "10")
-        dur_e.pack(pady=8)
+        dur_e = ctk.CTkEntry(dialog, placeholder_text="Duration in Minutes (e.g. 15)", width=480)
+        dur_e.insert(0, "15")
+        dur_e.pack(pady=6)
 
-        pass_e = ctk.CTkEntry(dialog, placeholder_text="Passing Score % (e.g. 70)", width=450)
-        pass_e.insert(0, "70")
-        pass_e.pack(pady=8)
+        ctk.CTkLabel(dialog, text="Question 1 Prompt:", font=ctk.CTkFont(weight="bold")).pack(pady=(12, 4))
+        prompt_e = ctk.CTkTextbox(dialog, height=55, width=480)
+        prompt_e.insert("1.0", "Which SQL command is used to remove a table and its structure from a database?")
+        prompt_e.pack(pady=4)
 
-        ctk.CTkLabel(dialog, text="First Question Prompt:", font=ctk.CTkFont(weight="bold")).pack(pady=(15, 5))
-        q_text = ctk.CTkTextbox(dialog, height=60, width=450)
-        q_text.insert("1.0", "What is the primary function of Python's pip command?")
-        q_text.pack(pady=5)
-
-        opt1 = ctk.CTkEntry(dialog, placeholder_text="Option 1 (Correct)", width=450)
-        opt1.insert(0, "Package installer and manager")
+        opt1 = ctk.CTkEntry(dialog, placeholder_text="Option 1 (Correct)", width=480)
+        opt1.insert(0, "DROP TABLE")
         opt1.pack(pady=4)
 
-        opt2 = ctk.CTkEntry(dialog, placeholder_text="Option 2", width=450)
-        opt2.insert(0, "Compiler optimization engine")
+        opt2 = ctk.CTkEntry(dialog, placeholder_text="Option 2", width=480)
+        opt2.insert(0, "DELETE FROM")
         opt2.pack(pady=4)
 
-        opt3 = ctk.CTkEntry(dialog, placeholder_text="Option 3", width=450)
-        opt3.insert(0, "Database migration runner")
+        opt3 = ctk.CTkEntry(dialog, placeholder_text="Option 3", width=480)
+        opt3.insert(0, "TRUNCATE")
         opt3.pack(pady=4)
 
-        opt4 = ctk.CTkEntry(dialog, placeholder_text="Option 4", width=450)
-        opt4.insert(0, "Web server gateway interface")
+        opt4 = ctk.CTkEntry(dialog, placeholder_text="Option 4", width=480)
+        opt4.insert(0, "REMOVE")
         opt4.pack(pady=4)
 
-        def save_action():
-            title = title_e.get().strip() or "Untitled Quiz"
-            new_quiz = {
+        def save_manual():
+            title = title_e.get().strip() or "Custom Quiz"
+            q_data = {
                 "id": f"quiz-{int(time.time()*1000)}",
                 "title": title,
                 "category": cat_e.get().strip() or "General",
                 "durationMinutes": int(dur_e.get().strip() or 10),
-                "passingScore": int(pass_e.get().strip() or 70),
+                "passingScore": 70,
+                "teacherName": self.teacher_name,
                 "questions": [
                     {
                         "id": "q1",
-                        "text": q_text.get("1.0", "end-1c"),
+                        "text": prompt_e.get("1.0", "end-1c"),
                         "options": [opt1.get(), opt2.get(), opt3.get(), opt4.get()],
                         "correct": 0,
-                        "explanation": "pip is the official standard package manager for Python."
+                        "explanation": "DROP TABLE deletes the table definition and all rows completely."
                     }
                 ]
             }
-            self.db.save_quiz(new_quiz)
+            code = self.db.save_quiz(q_data)
             dialog.destroy()
-            self.render_examiner_studio()
-            messagebox.showinfo("Saved", f"Quiz '{title}' created successfully!")
+            messagebox.showinfo("Published!", f"Quiz saved successfully!\nStudent Join Code: {code}")
+            self.render_teacher_quizzes()
 
-        save_btn = ctk.CTkButton(dialog, text="Save Quiz", fg_color="#10b981", command=save_action)
-        save_btn.pack(pady=20)
+        ctk.CTkButton(dialog, text="Publish Quiz", fg_color="#10b981", command=save_manual).pack(pady=20)
 
-    # -------------------------------------------------------------
-    # ANALYTICS & RESULTS HISTORY
-    # -------------------------------------------------------------
-    def render_analytics_history(self):
-        for widget in self.analytics_frame.winfo_children():
-            widget.destroy()
+    # Teacher Class Reports
+    def render_teacher_reports(self):
+        self.clear_container()
 
-        header = ctk.CTkLabel(
-            self.analytics_frame,
-            text="Candidate Exam Records & History",
-            font=ctk.CTkFont(size=22, weight="bold")
-        )
-        header.pack(anchor="w", padx=25, pady=(20, 5))
+        ctk.CTkLabel(
+            self.container,
+            text="Class Examination Reports & Submissions",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=30, pady=(25, 5))
 
-        sub = ctk.CTkLabel(
-            self.analytics_frame,
-            text="Audit log of candidate submissions, scores, and proctoring metrics.",
+        ctk.CTkLabel(
+            self.container,
+            text="Real-time gradebook showing every student who submitted quizzes created by faculty.",
             font=ctk.CTkFont(size=13),
-            text_color="gray"
-        )
-        sub.pack(anchor="w", padx=25, pady=(0, 15))
+            text_color="#94a3b8"
+        ).pack(anchor="w", padx=30, pady=(0, 15))
 
-        scroll = ctk.CTkScrollableFrame(self.analytics_frame, corner_radius=10)
-        scroll.pack(fill="both", expand=True, padx=25, pady=(0, 20))
+        scroll = ctk.CTkScrollableFrame(self.container, corner_radius=10, fg_color="#111827")
+        scroll.pack(fill="both", expand=True, padx=30, pady=(0, 25))
 
-        attempts = self.db.get_attempts()
-        if not attempts:
-            ctk.CTkLabel(scroll, text="No examination attempts logged yet.").pack(pady=40)
+        reports = self.db.get_teacher_reports()
+        if not reports:
+            ctk.CTkLabel(scroll, text="No student submissions recorded yet. Share your Quiz Code with students!").pack(pady=40)
             return
 
-        for a in attempts:
+        for r in reports:
             card = ctk.CTkFrame(scroll, corner_radius=10, fg_color="#1e293b")
-            card.pack(fill="x", pady=6, padx=5)
+            card.pack(fill="x", pady=6, padx=10)
 
-            status_color = "#10b981" if a["passed"] else "#ef4444"
-            status_text = "PASSED" if a["passed"] else "FAILED"
+            top = ctk.CTkFrame(card, fg_color="transparent")
+            top.pack(fill="x", padx=15, pady=(10, 2))
 
-            ctk.CTkLabel(card, text=f"{a['quizTitle']} — {status_text}", font=ctk.CTkFont(size=15, weight="bold"), text_color=status_color).pack(anchor="w", padx=15, pady=(10, 2))
-            meta = f"Candidate: {a['candidateName']}   |   Score: {a['score']}/{a['totalQuestions']} ({a['percentage']}%)   |   Violations: {a['cheatViolations']}   |   Date: {a['submittedAt']}"
-            ctk.CTkLabel(card, text=meta, font=ctk.CTkFont(size=12), text_color="gray").pack(anchor="w", padx=15, pady=(0, 10))
+            status_color = "#10b981" if r["passed"] else "#ef4444"
+            status_text = "PASSED" if r["passed"] else "FAILED"
+
+            ctk.CTkLabel(top, text=f"Student: {r['studentName']}", font=ctk.CTkFont(size=16, weight="bold")).pack(side="left")
+            ctk.CTkLabel(top, text=f"{status_text} ({r['percentage']}%)", font=ctk.CTkFont(size=13, weight="bold"), text_color=status_color).pack(side="right")
+
+            meta = f"Quiz: {r['quizTitle']}   |   Code: {r['joinCode']}   |   Score: {r['score']}/{r['totalQuestions']}   |   ⚠️ Violations: {r['cheatViolations']}   |   Date: {r['submittedAt']}"
+            ctk.CTkLabel(card, text=meta, text_color="#94a3b8", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=15, pady=(0, 10))
+
+    # =============================================================
+    # 3. ADMINISTRATOR DASHBOARD (Global Metrics & Auditing)
+    # =============================================================
+    def render_admin_overview(self):
+        self.clear_container()
+
+        ctk.CTkLabel(
+            self.container,
+            text="🛡️ Administrator Global Command Center",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=30, pady=(25, 5))
+
+        ctk.CTkLabel(
+            self.container,
+            text="High-level platform metrics, active faculty members, and global candidate engagement.",
+            font=ctk.CTkFont(size=13),
+            text_color="#94a3b8"
+        ).pack(anchor="w", padx=30, pady=(0, 20))
+
+        stats = self.db.get_global_stats()
+
+        # Stats Cards Grid
+        grid_frame = ctk.CTkFrame(self.container, fg_color="transparent")
+        grid_frame.pack(fill="x", padx=30, pady=(0, 20))
+        grid_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+        def make_stat_card(col, label, val, color):
+            card = ctk.CTkFrame(grid_frame, fg_color="#182234", corner_radius=10)
+            card.grid(row=0, column=col, padx=8, pady=5, sticky="ew")
+            ctk.CTkLabel(card, text=val, font=ctk.CTkFont(size=26, weight="bold"), text_color=color).pack(pady=(15, 2))
+            ctk.CTkLabel(card, text=label, font=ctk.CTkFont(size=12), text_color="#94a3b8").pack(pady=(0, 15))
+
+        make_stat_card(0, "Total Quizzes", str(stats["totalQuizzes"]), "#06b6d4")
+        make_stat_card(1, "Total Submissions", str(stats["totalAttempts"]), "#8b5cf6")
+        make_stat_card(2, "Pass Rate", f"{stats['passRate']}%", "#10b981")
+        make_stat_card(3, "Active Teachers", str(stats["activeTeachers"]), "#f59e0b")
+
+        # Global Activity Feed
+        ctk.CTkLabel(
+            self.container,
+            text="Recent Global Activity Audit:",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w", padx=30, pady=(15, 8))
+
+        scroll = ctk.CTkScrollableFrame(self.container, corner_radius=10, fg_color="#111827")
+        scroll.pack(fill="both", expand=True, padx=30, pady=(0, 25))
+
+        reports = self.db.get_teacher_reports()
+        if not reports:
+            ctk.CTkLabel(scroll, text="No submissions recorded platform-wide yet.").pack(pady=30)
+            return
+
+        for r in reports:
+            card = ctk.CTkFrame(scroll, corner_radius=8, fg_color="#1e293b")
+            card.pack(fill="x", pady=4, padx=5)
+            ctk.CTkLabel(card, text=f"[SUBMISSION] {r['studentName']} completed '{r['quizTitle']}' under {r['teacherName']} — Score: {r['percentage']}%", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=12, pady=8)
+
+    def render_admin_quizzes(self):
+        self.render_teacher_quizzes()
+
+    def render_admin_attempts(self):
+        self.render_teacher_reports()
 
 
 if __name__ == "__main__":
-    app = OnlineQuizApp()
+    app = OnlineQuizDesktopApp()
     app.mainloop()

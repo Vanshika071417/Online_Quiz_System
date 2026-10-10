@@ -74,6 +74,20 @@
         </div>
       </div>
 
+      <!-- Quick Join by Quiz Code Banner (Mobile & Desktop) -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px solid var(--accent-cyan-glow); margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 0.25rem;">🔑 Have a Quiz Code from your Teacher?</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Enter the 6-character code (e.g. <code>QZ-1001</code>) to load your class assessment.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 380px;">
+            <input type="text" id="joinCodeInputWeb" class="form-input" placeholder="e.g. QZ-1001" style="font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+            <button class="btn btn-cyan" onclick="joinByCodeWeb()" style="white-space: nowrap;">Join Quiz 🚀</button>
+          </div>
+        </div>
+      </div>
+
       <div id="studentQuizCatalog" class="quiz-catalog-grid">
         <!-- Rendered dynamically -->
       </div>
@@ -236,7 +250,10 @@
           </div>
 
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="examinerStudio.openCreateQuizModal()">
+            <button class="btn btn-primary" onclick="openAIGeneratorModal()" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">
+              🤖 Generate with AI
+            </button>
+            <button class="btn btn-cyan" onclick="examinerStudio.openCreateQuizModal()">
               + Create New Quiz
             </button>
             <label class="btn btn-secondary" style="margin: 0; cursor: pointer;">
@@ -494,6 +511,49 @@
     </div>
   </div>
 
+
+  <!-- 4. AI Quiz Generator Modal -->
+  <div id="aiGeneratorModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">🤖 AI Quiz & Question Generator</h3>
+        <button class="modal-close" onclick="closeAIGeneratorModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+          Provide your subject topic or curriculum chapter, and the AI generator will construct questions, choices, answers, and explanations.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Subject / Topic</label>
+          <input type="text" id="aiTopicInput" class="form-input" placeholder="e.g. Python Asynchronous Programming, SQL Joins">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Question Count</label>
+            <select id="aiCountSelect" class="form-select">
+              <option value="3">3 Questions</option>
+              <option value="5" selected>5 Questions</option>
+              <option value="8">8 Questions</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Difficulty</label>
+            <select id="aiDiffSelect" class="form-select">
+              <option value="Beginner">Beginner</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAIGeneratorModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmGenerateWithAI()" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">
+          ⚡ Generate & Save Quiz
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
