@@ -1,0 +1,8 @@
+customtkinter>=6.0.0
+fastapi>=0.110.0
+uvicorn>=0.30.0
+websockets>=13.0
+pydantic>=2.7.0
+aiofiles>=23.2.0
+aiosqlite>=0.20.0
+requests>=2.31.0
