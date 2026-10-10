@@ -1,0 +1,26 @@
+# Node / JS
+node_modules/
+dist/
+build/
+.env
+.env.local
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env/
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
