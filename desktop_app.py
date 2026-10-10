@@ -360,6 +360,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.time_left_seconds = 0
         self.timer_running = False
         self.cheat_violations = 0
+        self.last_focus_loss_time = 0
 
         # Anti-cheat listener: bind window focus loss
         self.bind("<FocusOut>", self.on_window_focus_loss)
@@ -691,14 +692,43 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.start_student_exam(quiz)
 
     def on_window_focus_loss(self, event):
-        """Proctoring violation listener when student switches windows or minimizes."""
-        if self.timer_running and self.active_quiz:
-            self.cheat_violations += 1
-            if hasattr(self, "cheat_badge") and self.cheat_badge.winfo_exists():
-                self.cheat_badge.configure(text=f"⚠️ Anti-Cheat Violations: {self.cheat_violations}")
-            messagebox.showwarning(
-                "Anti-Cheat Security Warning",
-                f"Window focus lost! External application switches are logged and forwarded to your instructor.\nTotal Infractions: {self.cheat_violations}"
+        """Proctoring violation listener when student switches away from the application."""
+        if not (self.timer_running and self.active_quiz):
+            return
+
+        # 1. Filter out internal child widget focus transitions (e.g. clicking options, buttons, entries)
+        if event.widget != self:
+            return
+
+        # 2. Allow event processing to complete and verify whether app truly lost OS focus
+        self.after(200, self._verify_app_focus_loss)
+
+    def _verify_app_focus_loss(self):
+        """Confirm window focus loss after Tkinter finishes internal widget dispatching."""
+        if not (self.timer_running and self.active_quiz):
+            return
+
+        # If any internal widget currently holds focus, this was an internal interaction
+        try:
+            if self.focus_get() is not None:
+                return
+        except Exception:
+            pass
+
+        # Debounce: minimum 3 seconds between logged infractions to avoid duplicate bursts
+        now = time.time()
+        if now - self.last_focus_loss_time < 3.0:
+            return
+        self.last_focus_loss_time = now
+
+        # Increment violation counter
+        self.cheat_violations += 1
+
+        # Non-blocking UI update: update badge color without disruptive popups
+        if hasattr(self, "cheat_badge") and self.cheat_badge.winfo_exists():
+            self.cheat_badge.configure(
+                text=f"⚠️ Violations: {self.cheat_violations}",
+                text_color="#ef4444"
             )
 
     def start_student_exam(self, quiz):
@@ -707,6 +737,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.user_answers = {}
         self.review_flags = set()
         self.cheat_violations = 0
+        self.last_focus_loss_time = 0
         self.time_left_seconds = quiz["durationMinutes"] * 60
         self.timer_running = True
 
@@ -750,11 +781,12 @@ class OnlineQuizDesktopApp(ctk.CTk):
             text_color="#ffffff"
         ).pack(side="left", padx=15, pady=12)
 
+        badge_color = "#ef4444" if self.cheat_violations > 0 else "#94a3b8"
         self.cheat_badge = ctk.CTkLabel(
             top,
             text=f"⚠️ Violations: {self.cheat_violations}",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color="#fca5a5"
+            text_color=badge_color
         )
         self.cheat_badge.pack(side="left", padx=15, pady=12)
 
@@ -765,6 +797,17 @@ class OnlineQuizDesktopApp(ctk.CTk):
             text_color="#06b6d4"
         )
         self.timer_lbl.pack(side="right", padx=15, pady=12)
+
+        # Non-blocking anti-cheat warning banner if violations occurred
+        if self.cheat_violations > 0:
+            cheat_alert = ctk.CTkFrame(self.workspace, fg_color="#450a0a", corner_radius=8, border_width=1, border_color="#b91c1c")
+            cheat_alert.pack(fill="x", padx=25, pady=(0, 10))
+            ctk.CTkLabel(
+                cheat_alert,
+                text=f"⚠️ Anti-Cheat Warning: {self.cheat_violations} external window switch event(s) logged and reported to instructor.",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#fca5a5"
+            ).pack(padx=12, pady=7)
 
         # Main Arena Grid: Left Question (3 cols) | Right Question Palette (1 col)
         arena = ctk.CTkFrame(self.workspace, fg_color="transparent")
