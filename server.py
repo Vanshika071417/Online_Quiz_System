@@ -20,13 +20,17 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ai_quiz_generator import generate_quiz_with_ai
+from backend.core.telemetry import RequestIDMiddleware
+from backend.core.bootstrap import init_and_seed_db
+from backend.api.v1.router import api_v1_router
 
 app = FastAPI(
     title="Online Quiz System API",
-    description="Multi-platform backend for Admin, Teacher, and Student workflows",
-    version="2.1.0"
+    description="Enterprise Multi-Tenant Assessment Engine with Server Deadlines & Durable Autosave",
+    version="2.2.0"
 )
 
+app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,6 +38,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(api_v1_router)
+
+@app.on_event("startup")
+def on_app_startup():
+    init_db()
+    init_and_seed_db()
 
 DB_PATH = "quiz_system.db"
 

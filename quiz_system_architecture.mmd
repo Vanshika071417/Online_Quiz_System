@@ -1,0 +1,35 @@
+flowchart TB
+  subgraph CLIENT[Client and edge]
+    UI[Web React / Next.js or mobile] --> CDN[CDN + WAF]
+    CDN --> LB[Load balancer / ingress]
+  end
+  LB --> API[FastAPI REST API / OpenAPI]
+  LB --> WS[Optional WebSocket gateway]
+
+  subgraph APP[Python modular application - deploy together initially]
+    IAM[Identity / tenant / roles]
+    AUTH[Authoring / question bank / quiz versions]
+    ATT[Attempts / server timer / autosave / submit]
+    GRADE[Grading / results / appeals]
+    ADMIN[Admin / audit / support]
+    ANALYTICS[Analytics / reporting]
+    NOTIFY[Notification service]
+  end
+
+  API --> IAM
+  API --> AUTH
+  API --> ATT
+  API --> GRADE
+  API --> ADMIN
+  API --> ANALYTICS
+  WS --> ATT
+
+  APP --> PG[(PostgreSQL - source of truth)]
+  APP --> REDIS[(Redis - cache / rate limits / ephemeral state)]
+  AUTH --> OBJ[(Object storage - media / exports)]
+  APP --> Q[Durable task queue]
+  NOTIFY --> Q
+  Q --> WORK[Python workers - email / exports / reports]
+  WORK --> PG
+  WORK --> OBJ
+  WORK --> MAIL[Email / SMS provider]
