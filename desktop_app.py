@@ -473,38 +473,38 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 "option_selected_bg": "#18181b"
             }
         elif self.current_theme == "light":
-            # Executive Professional Light Theme (Default)
+            # Executive Professional Cream Theme (Default)
             return {
-                "bg_primary": "#f8fafc",         # Crisp slate-50 corporate canvas
-                "bg_card": "#ffffff",            # Pure white elevated surface
-                "bg_card_secondary": "#f1f5f9",  # Slate-100 container / header
-                "bg_card_hover": "#f8fafc",
-                "card_border": "#e2e8f0",        # Slate-200 hairline border
+                "bg_primary": "#f6f1e5",         # Rich, soothing warm cream canvas
+                "bg_card": "#fdfbf7",            # Warm ivory elevated card surface
+                "bg_card_secondary": "#eee7d5",  # Warm beige container / well / header
+                "bg_card_hover": "#f3ecda",
+                "card_border": "#dfd7c2",        # Warm linen hairline border
                 "border_width": 1,
-                "text_primary": "#0f172a",       # Slate-900 crisp deep text
-                "text_secondary": "#475569",     # Slate-600 readable secondary
-                "text_dim": "#64748b",           # Slate-500
-                "text_cyan": "#0284c7",          # Sky-600
-                "accent_primary": "#4f46e5",     # Indigo-600 authoritative accent
-                "btn_cyan": "#0284c7",           # Sky-600 action button
+                "text_primary": "#1c1917",       # Stone-900 warm deep espresso charcoal
+                "text_secondary": "#44403c",     # Stone-700 warm readable secondary
+                "text_dim": "#78716c",           # Stone-500 warm taupe
+                "text_cyan": "#0284c7",          # Sapphire / deep sky
+                "accent_primary": "#4338ca",     # Deep rich authoritative indigo
+                "btn_cyan": "#0284c7",           # Sky / sapphire action button
                 "btn_cyan_text": "#ffffff",
-                "btn_neutral": "#ffffff",        # Clean white button
-                "btn_neutral_text": "#0f172a",
-                "btn_neutral_hover": "#f1f5f9",
-                "palette_current": "#4f46e5",
-                "palette_answered": "#10b981",
-                "palette_review": "#f59e0b",
-                "palette_unanswered": "#f1f5f9",
-                "palette_unanswered_text": "#475569",
-                "code_bg": "#0f172a",            # Deep slate terminal block
+                "btn_neutral": "#fdfbf7",        # Warm ivory button
+                "btn_neutral_text": "#1c1917",
+                "btn_neutral_hover": "#eee7d5",
+                "palette_current": "#4338ca",
+                "palette_answered": "#059669",
+                "palette_review": "#d97706",
+                "palette_unanswered": "#eee7d5",
+                "palette_unanswered_text": "#44403c",
+                "code_bg": "#292524",            # Warm dark stone terminal block
                 "code_text": "#38bdf8",          # High-contrast sky blue syntax
-                "table_header_bg": "#f1f5f9",
-                "table_row_alt": "#f8fafc",
-                "badge_cyan_bg": "#e0f2fe",
+                "table_header_bg": "#eee7d5",
+                "table_row_alt": "#f3ecda",
+                "badge_cyan_bg": "#daf0fa",
                 "badge_cyan_text": "#0369a1",
-                "badge_indigo_bg": "#e0e7ff",
+                "badge_indigo_bg": "#ebe9fe",
                 "badge_indigo_text": "#4338ca",
-                "option_selected_bg": "#eef2ff"  # Indigo-50 active card tint
+                "option_selected_bg": "#ede4ce"  # Warm cream active card tint
             }
         else:
             # Modern Obsidian Dark Theme
@@ -582,7 +582,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.font_up_btn.configure(fg_color=c["btn_neutral"], text_color=c["btn_neutral_text"], hover_color=c["btn_neutral_hover"])
         if hasattr(self, "focus_btn"):
             self.focus_btn.configure(
-                fg_color="#4f46e5" if self.minimalist_focus_mode else c["btn_neutral"],
+                fg_color=c["accent_primary"] if self.minimalist_focus_mode else c["btn_neutral"],
                 text_color="#ffffff" if self.minimalist_focus_mode else c["btn_neutral_text"],
                 hover_color=c["btn_neutral_hover"]
             )
@@ -704,8 +704,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.nav_tabs_frame,
             text="🎓 Candidate Arena",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#4f46e5",
-            hover_color="#4338ca",
+            fg_color=c["accent_primary"],
+            hover_color="#3730a3",
             text_color="#ffffff",
             corner_radius=6,
             height=34,
@@ -820,22 +820,23 @@ class OnlineQuizDesktopApp(ctk.CTk):
     def switch_nav_view(self, view_name):
         self.current_nav_view = view_name
         c = self.get_theme_colors()
+        active_color = c["accent_primary"]
 
         # Update top tab buttons
         if view_name == "candidate-arena":
-            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff")
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_candidate_arena()
         elif view_name == "examiner-studio":
-            self.tab_examiner_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_examiner_btn.configure(fg_color=active_color, text_color="#ffffff")
             self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_examiner_studio()
         elif view_name == "exam-arena":
-            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff")
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_exam_arena()
         elif view_name == "result-scorecard":
-            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff")
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_result_scorecard()
 

@@ -1,38 +1,38 @@
 /* =========================================================================
    Design Tokens & Theme Variables — Executive Professional Design System
-   Default: Clean, Modern, High-Precision Light Theme
+   Default: Elegant, Warm Executive Cream & Ivory Theme
    Theme Toggle: body.dark-theme & body.high-contrast
    ========================================================================= */
 
 :root {
-  /* Default: Executive Professional Light Theme */
-  --bg-primary: #f8fafc;           /* Slate-50: Crisp, clean corporate canvas */
-  --bg-secondary: #ffffff;         /* Pure crisp white */
-  --bg-tertiary: #f1f5f9;          /* Slate-100: Soft structural panels */
-  --bg-card: #ffffff;              /* Elevated card surface */
-  --bg-card-hover: #f8fafc;
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-glass-heavy: rgba(255, 255, 255, 0.94);
-  --nav-bg: rgba(255, 255, 255, 0.88);
+  /* Default: Executive Professional Cream Theme */
+  --bg-primary: #f6f1e5;           /* Rich, soothing warm cream canvas */
+  --bg-secondary: #eee7d5;         /* Warm cream panels / containers */
+  --bg-tertiary: #e7dfca;          /* Soft beige/parchment structural wells */
+  --bg-card: #fdfbf7;              /* Radiant warm ivory elevated card surface */
+  --bg-card-hover: #f3ecda;
+  --bg-glass: rgba(253, 251, 247, 0.92);
+  --bg-glass-heavy: rgba(253, 251, 247, 0.98);
+  --nav-bg: rgba(246, 241, 229, 0.95);
 
   /* Borders & Dividers */
-  --border-subtle: #e2e8f0;        /* Slate-200: Hairline crisp divider */
-  --border-medium: #cbd5e1;        /* Slate-300: Defined element outline */
-  --border-highlight: rgba(79, 70, 229, 0.5);
+  --border-subtle: #dfd7c2;        /* Warm linen hairline divider */
+  --border-medium: #cfc4a6;        /* Defined warm sand element outline */
+  --border-highlight: rgba(67, 56, 202, 0.5);
 
   /* Accents */
-  --accent-cyan: #0284c7;          /* Sky-600: High-contrast professional blue */
+  --accent-cyan: #0284c7;          /* Sky / Sapphire */
   --accent-cyan-glow: rgba(2, 132, 199, 0.2);
-  --accent-indigo: #4f46e5;        /* Indigo-600: Authoritative executive brand */
-  --accent-indigo-glow: rgba(79, 70, 229, 0.2);
+  --accent-indigo: #4338ca;        /* Deep authoritative indigo */
+  --accent-indigo-glow: rgba(67, 56, 202, 0.2);
   --accent-purple: #7c3aed;        /* Violet-600 */
   --accent-purple-glow: rgba(124, 58, 237, 0.2);
 
-  --accent-success: #10b981;
+  --accent-success: #059669;
   --accent-success-bg: #ecfdf5;
-  --accent-warning: #f59e0b;
-  --accent-warning-bg: #fffbeb;
-  --accent-danger: #ef4444;
+  --accent-warning: #d97706;
+  --accent-warning-bg: #fef3c7;
+  --accent-danger: #dc2626;
   --accent-danger-bg: #fef2f2;
   --accent-info: #2563eb;
 
@@ -40,17 +40,17 @@
   --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  --text-main: #0f172a;            /* Slate-900: Deep executive charcoal */
-  --text-muted: #475569;           /* Slate-600: Highly readable secondary */
-  --text-dim: #64748b;             /* Slate-500: Auxiliary notes */
+  --text-main: #1c1917;            /* Stone-900: Deep warm espresso charcoal */
+  --text-muted: #44403c;           /* Stone-700: Warm readable secondary */
+  --text-dim: #78716c;             /* Stone-500: Auxiliary notes */
   --text-inverse: #ffffff;
 
-  /* Subtle Modern Multi-Layer Shadows */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 14px 34px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
-  --shadow-neon: 0 4px 18px rgba(79, 70, 229, 0.25);
-  --shadow-cyan-neon: 0 4px 18px rgba(2, 132, 199, 0.25);
+  /* Subtle Warm Multi-Layer Shadows */
+  --shadow-sm: 0 1px 3px rgba(44, 34, 20, 0.05), 0 1px 2px rgba(44, 34, 20, 0.03);
+  --shadow-md: 0 4px 14px -2px rgba(44, 34, 20, 0.07), 0 2px 6px -1px rgba(44, 34, 20, 0.04);
+  --shadow-lg: 0 14px 34px -4px rgba(44, 34, 20, 0.09), 0 4px 12px -2px rgba(44, 34, 20, 0.05);
+  --shadow-neon: 0 4px 18px rgba(67, 56, 202, 0.22);
+  --shadow-cyan-neon: 0 4px 18px rgba(2, 132, 199, 0.22);
 
   --blur-glass: blur(16px);
   --radius-sm: 8px;

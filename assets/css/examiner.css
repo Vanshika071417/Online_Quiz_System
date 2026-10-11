@@ -151,7 +151,7 @@
 }
 
 .question-nav-item.active {
-  background: #eef2ff;
+  background: #f5eedf;
   border-color: var(--accent-indigo);
 }
 

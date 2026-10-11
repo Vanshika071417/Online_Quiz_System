@@ -32,11 +32,13 @@ body {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.12;
+  opacity: 0;
+  display: none;
   animation: floatOrb 20s infinite alternate ease-in-out;
 }
 
 body.dark-theme .orb {
+  display: block;
   opacity: 0.28;
 }
 
@@ -162,7 +164,7 @@ body.dark-theme .orb {
 }
 
 .role-tab-btn.active {
-  background: linear-gradient(135deg, var(--accent-indigo), #4338ca);
+  background: linear-gradient(135deg, var(--accent-indigo), #3730a3);
   color: #ffffff;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
@@ -170,9 +172,6 @@ body.dark-theme .orb {
 
 body.dark-theme .role-tab-btn.active {
   background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
-  box-shadow: var(--shadow-neon);
-}
-  font-weight: 600;
   box-shadow: var(--shadow-neon);
 }
 
@@ -315,5 +314,10 @@ body.dark-theme .access-btn:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: var(--accent-cyan);
   color: #ffffff;
+}
+
+body.dark-theme .join-quiz-banner {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)) !important;
+  border-color: var(--accent-cyan-glow) !important;
 }
 

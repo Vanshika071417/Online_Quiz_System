@@ -16,11 +16,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   
   <!-- Styles -->
-  <link rel="stylesheet" href="./assets/css/variables.css">
-  <link rel="stylesheet" href="./assets/css/main.css">
-  <link rel="stylesheet" href="./assets/css/components.css">
-  <link rel="stylesheet" href="./assets/css/examiner.css">
-  <link rel="stylesheet" href="./assets/css/quiz-taker.css">
+  <link rel="stylesheet" href="./assets/css/variables.css?v=2">
+  <link rel="stylesheet" href="./assets/css/main.css?v=2">
+  <link rel="stylesheet" href="./assets/css/components.css?v=2">
+  <link rel="stylesheet" href="./assets/css/examiner.css?v=2">
+  <link rel="stylesheet" href="./assets/css/quiz-taker.css?v=2">
 </head>
 <body>
 
@@ -84,7 +84,7 @@
       <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
         <div>
           <span class="badge badge-cyan" style="margin-bottom: 0.5rem;">Cross-Platform Assessment Engine</span>
-          <h1 style="font-size: 2.25rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">Explore Available Quizzes</h1>
+          <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">Explore Available Quizzes</h1>
           <p style="color: var(--text-muted); font-size: 0.95rem;">Select an assessment to begin your timed, proctored evaluation.</p>
         </div>
 
@@ -94,10 +94,10 @@
       </div>
 
       <!-- Quick Join by Quiz Code Banner (Mobile & Desktop) -->
-      <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px solid var(--accent-cyan-glow); margin-bottom: 2rem;">
+      <div class="card join-quiz-banner" style="background: var(--bg-card); border: 1px solid var(--border-medium); margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 0.25rem;">🔑 Have a Quiz Code from your Teacher?</h3>
+            <h3 style="font-size: 1.15rem; color: var(--text-main); margin-bottom: 0.25rem;">🔑 Have a Quiz Code from your Teacher?</h3>
             <p style="font-size: 0.85rem; color: var(--text-muted);">Enter the 6-character code (e.g. <code>QZ-1001</code>) to load your class assessment.</p>
           </div>
           <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 380px;">
@@ -206,7 +206,7 @@
           <span id="resultStatusBadge" class="badge badge-success" style="font-size: 0.85rem; padding: 0.35rem 0.9rem; margin-bottom: 1.25rem;">
             PASSED
           </span>
-          <h2 style="font-size: 1.85rem; color: #ffffff; margin-bottom: 0.25rem;" id="resultQuizTitle">Assessment Title</h2>
+          <h2 style="font-size: 1.85rem; color: var(--text-main); margin-bottom: 0.25rem;" id="resultQuizTitle">Assessment Title</h2>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
             Candidate: <strong id="resultCandidateName" style="color: var(--accent-cyan);">Candidate</strong>
           </p>
@@ -224,7 +224,7 @@
           <div class="result-stats-row">
             <div class="card" style="padding: 1rem;">
               <div style="font-size: 0.8rem; color: var(--text-muted);">Score</div>
-              <div id="resultCorrectQuestions" style="font-size: 1.35rem; font-weight: 700; color: #ffffff;">0 / 0</div>
+              <div id="resultCorrectQuestions" style="font-size: 1.35rem; font-weight: 700; color: var(--text-main);">0 / 0</div>
             </div>
             <div class="card" style="padding: 1rem;">
               <div style="font-size: 0.8rem; color: var(--text-muted);">Passing Criteria</div>
@@ -249,7 +249,7 @@
 
         <!-- Detailed Explanations Breakdown -->
         <div style="margin-top: 2rem;">
-          <h3 style="font-size: 1.3rem; margin-bottom: 1rem; color: #ffffff;">Detailed Review & Explanations</h3>
+          <h3 style="font-size: 1.3rem; margin-bottom: 1rem; color: var(--text-main);">Detailed Review & Explanations</h3>
           <div id="answerReviewList">
             <!-- Rendered by quizEngine -->
           </div>
@@ -264,7 +264,7 @@
         <div class="examiner-header">
           <div>
             <span class="badge badge-indigo" style="margin-bottom: 0.5rem;">Examiner Workspace</span>
-            <h1 style="font-size: 2.25rem; font-weight: 800; color: #ffffff;">Quiz & Question Studio</h1>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-main);">Quiz & Question Studio</h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">Build quizzes, customize question banks, and analyze candidate metrics.</p>
           </div>
 
@@ -316,7 +316,7 @@
 
         <!-- Quiz Management Catalog -->
         <div>
-          <h2 style="font-size: 1.35rem; margin-bottom: 1rem; color: #ffffff;">Manage Question Banks</h2>
+          <h2 style="font-size: 1.35rem; margin-bottom: 1rem; color: var(--text-main);">Manage Question Banks</h2>
           <div id="examinerQuizList" class="examiner-quizzes-grid">
             <!-- Rendered by examiner.js -->
           </div>
@@ -330,7 +330,7 @@
       <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
           <span class="badge badge-cyan">Visual Assessment Builder</span>
-          <h2 style="font-size: 1.75rem; color: #ffffff;">Edit Quiz & Questions</h2>
+          <h2 style="font-size: 1.75rem; color: var(--text-main);">Edit Quiz & Questions</h2>
         </div>
         <div style="display: flex; gap: 0.75rem;">
           <button class="btn btn-secondary" onclick="switchView('examiner')">Cancel</button>
@@ -340,7 +340,7 @@
 
       <!-- Quiz General Settings Panel -->
       <div class="card" style="margin-bottom: 1.5rem;">
-        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #ffffff;">Assessment Details</h3>
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-main);">Assessment Details</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
           <div class="form-group">
             <label class="form-label">Quiz Title</label>
@@ -371,7 +371,7 @@
         <div class="builder-sidebar">
           <div class="card">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-              <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">Questions</span>
+              <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Questions</span>
               <button class="btn btn-cyan btn-sm" onclick="examinerStudio.addNewQuestion()">+ Add</button>
             </div>
             <div id="builderQuestionList" class="question-list-scroll">
@@ -383,7 +383,7 @@
         <!-- Right: Active Question Form -->
         <div class="card question-form-panel">
           <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h4 style="font-size: 1.1rem; color: #ffffff;">Editing Question #<span id="builderCurrentQNum">1</span></h4>
+            <h4 style="font-size: 1.1rem; color: var(--text-main);">Editing Question #<span id="builderCurrentQNum">1</span></h4>
             <span class="badge badge-indigo">Single Choice</span>
           </div>
 
@@ -425,10 +425,10 @@
         <button class="modal-close" onclick="closeStartExamModal()">✕</button>
       </div>
       <div class="modal-body">
-        <h4 id="startModalQuizTitle" style="font-size: 1.25rem; color: #ffffff; margin-bottom: 0.5rem;">Title</h4>
+        <h4 id="startModalQuizTitle" style="font-size: 1.25rem; color: var(--text-main); margin-bottom: 0.5rem;">Title</h4>
         <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted);">
-          <span>⏱️ Duration: <strong id="startModalDuration" style="color: #fff;">15m</strong></span>
-          <span>❓ Questions: <strong id="startModalQuestions" style="color: #fff;">10</strong></span>
+          <span>⏱️ Duration: <strong id="startModalDuration" style="color: var(--text-main);">15m</strong></span>
+          <span>❓ Questions: <strong id="startModalQuestions" style="color: var(--text-main);">10</strong></span>
         </div>
 
         <div class="form-group">
@@ -436,8 +436,8 @@
           <input type="text" id="candidateNameInput" class="form-input" placeholder="e.g. Alex Mercer" value="Candidate">
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
-          <h5 style="color: #ffffff; margin-bottom: 0.5rem; font-size: 0.9rem;">🛡️ Proctoring & Security Rules</h5>
+        <div style="background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <h5 style="color: var(--text-main); margin-bottom: 0.5rem; font-size: 0.9rem;">🛡️ Proctoring & Security Rules</h5>
           <ul style="font-size: 0.825rem; color: var(--text-muted); padding-left: 1.2rem; line-height: 1.6;">
             <li>Do not switch browser tabs or minimize the window during the exam.</li>
             <li>Anti-cheat tracking monitors blur events and records violations.</li>
