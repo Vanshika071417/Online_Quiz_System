@@ -50,8 +50,11 @@
         </button>
       </div>
 
-      <!-- Accessibility & Display Controls (High Contrast, Font Resize, Minimalist Mode) -->
+      <!-- Accessibility & Display Controls (Theme, High Contrast, Font Resize, Minimalist Mode) -->
       <div style="display: flex; gap: 0.35rem; align-items: center;">
+        <button id="themeToggleBtn" class="access-btn" onclick="toggleWebTheme()" title="Switch between Light and Dark Theme">
+          <span id="themeToggleIcon">☀️</span><span id="themeToggleText" class="tab-text">Light</span>
+        </button>
         <button class="access-btn" onclick="toggleWebHighContrast()" title="Toggle High Contrast (WCAG AAA)">
           <span>👁️</span><span class="tab-text">Contrast</span>
         </button>

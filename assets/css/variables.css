@@ -1,20 +1,86 @@
-/* Design Tokens & Theme Variables */
+/* =========================================================================
+   Design Tokens & Theme Variables — Executive Professional Design System
+   Default: Clean, Modern, High-Precision Light Theme
+   Theme Toggle: body.dark-theme & body.high-contrast
+   ========================================================================= */
+
 :root {
-  /* Color Palette - Premium Dark Theme */
+  /* Default: Executive Professional Light Theme */
+  --bg-primary: #f8fafc;           /* Slate-50: Crisp, clean corporate canvas */
+  --bg-secondary: #ffffff;         /* Pure crisp white */
+  --bg-tertiary: #f1f5f9;          /* Slate-100: Soft structural panels */
+  --bg-card: #ffffff;              /* Elevated card surface */
+  --bg-card-hover: #f8fafc;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass-heavy: rgba(255, 255, 255, 0.94);
+  --nav-bg: rgba(255, 255, 255, 0.88);
+
+  /* Borders & Dividers */
+  --border-subtle: #e2e8f0;        /* Slate-200: Hairline crisp divider */
+  --border-medium: #cbd5e1;        /* Slate-300: Defined element outline */
+  --border-highlight: rgba(79, 70, 229, 0.5);
+
+  /* Accents */
+  --accent-cyan: #0284c7;          /* Sky-600: High-contrast professional blue */
+  --accent-cyan-glow: rgba(2, 132, 199, 0.2);
+  --accent-indigo: #4f46e5;        /* Indigo-600: Authoritative executive brand */
+  --accent-indigo-glow: rgba(79, 70, 229, 0.2);
+  --accent-purple: #7c3aed;        /* Violet-600 */
+  --accent-purple-glow: rgba(124, 58, 237, 0.2);
+
+  --accent-success: #10b981;
+  --accent-success-bg: #ecfdf5;
+  --accent-warning: #f59e0b;
+  --accent-warning-bg: #fffbeb;
+  --accent-danger: #ef4444;
+  --accent-danger-bg: #fef2f2;
+  --accent-info: #2563eb;
+
+  /* Typography */
+  --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --text-main: #0f172a;            /* Slate-900: Deep executive charcoal */
+  --text-muted: #475569;           /* Slate-600: Highly readable secondary */
+  --text-dim: #64748b;             /* Slate-500: Auxiliary notes */
+  --text-inverse: #ffffff;
+
+  /* Subtle Modern Multi-Layer Shadows */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 14px 34px -4px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  --shadow-neon: 0 4px 18px rgba(79, 70, 229, 0.25);
+  --shadow-cyan-neon: 0 4px 18px rgba(2, 132, 199, 0.25);
+
+  --blur-glass: blur(16px);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =========================================================================
+   DARK THEME OVERRIDES (Activated via body.dark-theme)
+   ========================================================================= */
+body.dark-theme {
   --bg-primary: #0a0e17;
   --bg-secondary: #111827;
   --bg-tertiary: #1f2937;
-  --bg-card: rgba(17, 24, 39, 0.75);
+  --bg-card: rgba(17, 24, 39, 0.78);
   --bg-card-hover: rgba(31, 41, 55, 0.85);
   --bg-glass: rgba(255, 255, 255, 0.04);
   --bg-glass-heavy: rgba(15, 23, 42, 0.85);
+  --nav-bg: rgba(10, 14, 23, 0.85);
 
-  /* Borders & Dividers */
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.15);
   --border-highlight: rgba(99, 102, 241, 0.4);
 
-  /* Accent Colors (Cyan, Violet, Emerald, Rose) */
   --accent-cyan: #06b6d4;
   --accent-cyan-glow: rgba(6, 182, 212, 0.35);
   --accent-indigo: #6366f1;
@@ -30,30 +96,14 @@
   --accent-danger-bg: rgba(239, 68, 68, 0.15);
   --accent-info: #3b82f6;
 
-  /* Typography */
-  --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-
   --text-main: #f9fafb;
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
   --text-inverse: #030712;
 
-  /* Shadows & Glassmorphism */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
   --shadow-neon: 0 0 25px rgba(99, 102, 241, 0.25);
   --shadow-cyan-neon: 0 0 25px rgba(6, 182, 212, 0.3);
-
-  --blur-glass: blur(16px);
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
-
-  /* Transitions */
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

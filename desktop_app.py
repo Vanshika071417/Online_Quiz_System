@@ -24,8 +24,8 @@ from tqm_sqc_tools import (
     export_class_reports_to_csv
 )
 
-# CustomTkinter Visual Configuration
-ctk.set_appearance_mode("Dark")
+# CustomTkinter Visual Configuration (Professional Light Theme Default)
+ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("blue")
 
 DB_PATH = "quiz_system.db"
@@ -382,30 +382,34 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.title("Online Quiz System — Secure Multi-Platform Assessment")
         self.geometry("1300x840")
         self.minsize(1060, 720)
-        self.configure(fg_color="#0a0e17")
+
+        # Accessibility, Theme & Display Settings
+        self.current_theme = "light"  # "light" (default) or "dark"
+        self.high_contrast = False
+        self.font_scale = 1.0  # 0.85 to 1.45
+        self.minimalist_focus_mode = False
+        self.current_nav_view = "candidate-arena"  # candidate-arena, examiner-studio, exam-arena, result-scorecard
+
+        c = self.get_theme_colors()
+        self.configure(fg_color=c["bg_primary"])
 
         self.db = DatabaseManager()
 
         # Session & Authentication State
-        self.current_role = "student" # "student" or "examiner"
+        self.current_role = "student"  # "student" or "examiner"
         self.student_name = "Alex Mercer"
         self.teacher_name = "Prof. Alan Turing"
 
         # Exam Session Variables
         self.active_quiz = None
         self.current_q_index = 0
-        self.user_answers = {} # q_id -> selected_index
-        self.review_flags = set() # set of marked q_ids
+        self.user_answers = {}  # q_id -> selected_index
+        self.review_flags = set()  # set of marked q_ids
         self.time_left_seconds = 0
         self.timer_running = False
         self.cheat_violations = 0
         self.last_attempt_result = None
-
-        # Accessibility & Display Settings
-        self.font_scale = 1.0 # 0.85 to 1.45
-        self.high_contrast = False
-        self.minimalist_focus_mode = False
-        self.current_nav_view = "candidate-arena" # candidate-arena, examiner-studio, exam-arena, result-scorecard
+        self.last_focus_loss_time = 0
 
         # Global anti-cheat window focus listener
         self.bind("<FocusOut>", self.on_window_focus_loss)
@@ -439,36 +443,151 @@ class OnlineQuizDesktopApp(ctk.CTk):
             return {
                 "bg_primary": "#000000",
                 "bg_card": "#050505",
+                "bg_card_secondary": "#111111",
+                "bg_card_hover": "#18181b",
                 "card_border": "#ffffff",
                 "border_width": 2,
                 "text_primary": "#ffffff",
-                "text_secondary": "#fde047", # High-vis yellow
+                "text_secondary": "#fde047",  # High-vis yellow
+                "text_dim": "#fde047",
                 "text_cyan": "#38bdf8",
                 "accent_primary": "#fbbf24",
                 "btn_cyan": "#fde047",
                 "btn_cyan_text": "#000000",
+                "btn_neutral": "#000000",
+                "btn_neutral_text": "#ffffff",
+                "btn_neutral_hover": "#222222",
                 "palette_current": "#ffffff",
                 "palette_answered": "#22c55e",
                 "palette_review": "#f59e0b",
-                "palette_unanswered": "#18181b"
+                "palette_unanswered": "#18181b",
+                "palette_unanswered_text": "#ffffff",
+                "code_bg": "#000000",
+                "code_text": "#38bdf8",
+                "table_header_bg": "#18181b",
+                "table_row_alt": "#000000",
+                "badge_cyan_bg": "#082f49",
+                "badge_cyan_text": "#38bdf8",
+                "badge_indigo_bg": "#312e81",
+                "badge_indigo_text": "#c7d2fe",
+                "option_selected_bg": "#18181b"
+            }
+        elif self.current_theme == "light":
+            # Executive Professional Light Theme (Default)
+            return {
+                "bg_primary": "#f8fafc",         # Crisp slate-50 corporate canvas
+                "bg_card": "#ffffff",            # Pure white elevated surface
+                "bg_card_secondary": "#f1f5f9",  # Slate-100 container / header
+                "bg_card_hover": "#f8fafc",
+                "card_border": "#e2e8f0",        # Slate-200 hairline border
+                "border_width": 1,
+                "text_primary": "#0f172a",       # Slate-900 crisp deep text
+                "text_secondary": "#475569",     # Slate-600 readable secondary
+                "text_dim": "#64748b",           # Slate-500
+                "text_cyan": "#0284c7",          # Sky-600
+                "accent_primary": "#4f46e5",     # Indigo-600 authoritative accent
+                "btn_cyan": "#0284c7",           # Sky-600 action button
+                "btn_cyan_text": "#ffffff",
+                "btn_neutral": "#ffffff",        # Clean white button
+                "btn_neutral_text": "#0f172a",
+                "btn_neutral_hover": "#f1f5f9",
+                "palette_current": "#4f46e5",
+                "palette_answered": "#10b981",
+                "palette_review": "#f59e0b",
+                "palette_unanswered": "#f1f5f9",
+                "palette_unanswered_text": "#475569",
+                "code_bg": "#0f172a",            # Deep slate terminal block
+                "code_text": "#38bdf8",          # High-contrast sky blue syntax
+                "table_header_bg": "#f1f5f9",
+                "table_row_alt": "#f8fafc",
+                "badge_cyan_bg": "#e0f2fe",
+                "badge_cyan_text": "#0369a1",
+                "badge_indigo_bg": "#e0e7ff",
+                "badge_indigo_text": "#4338ca",
+                "option_selected_bg": "#eef2ff"  # Indigo-50 active card tint
             }
         else:
+            # Modern Obsidian Dark Theme
             return {
                 "bg_primary": "#0a0e17",
                 "bg_card": "#0f172a",
+                "bg_card_secondary": "#1e293b",
+                "bg_card_hover": "#1e293b",
                 "card_border": "#1e293b",
                 "border_width": 1,
                 "text_primary": "#ffffff",
                 "text_secondary": "#94a3b8",
+                "text_dim": "#64748b",
                 "text_cyan": "#06b6d4",
                 "accent_primary": "#6366f1",
                 "btn_cyan": "#06b6d4",
                 "btn_cyan_text": "#030712",
+                "btn_neutral": "#1e293b",
+                "btn_neutral_text": "#ffffff",
+                "btn_neutral_hover": "#334155",
                 "palette_current": "#0284c7",
                 "palette_answered": "#10b981",
                 "palette_review": "#f59e0b",
-                "palette_unanswered": "#1e293b"
+                "palette_unanswered": "#1e293b",
+                "palette_unanswered_text": "#94a3b8",
+                "code_bg": "#050811",
+                "code_text": "#38bdf8",
+                "table_header_bg": "#1e293b",
+                "table_row_alt": "#111827",
+                "badge_cyan_bg": "#082f49",
+                "badge_cyan_text": "#22d3ee",
+                "badge_indigo_bg": "#1e1b4b",
+                "badge_indigo_text": "#a5b4fc",
+                "option_selected_bg": "#1e1b4b"
             }
+
+    def toggle_appearance_mode(self):
+        if self.current_theme == "light":
+            self.current_theme = "dark"
+            ctk.set_appearance_mode("Dark")
+            if hasattr(self, "theme_btn"):
+                self.theme_btn.configure(text="🌙 Dark")
+        else:
+            self.current_theme = "light"
+            ctk.set_appearance_mode("Light")
+            if hasattr(self, "theme_btn"):
+                self.theme_btn.configure(text="☀️ Light")
+
+        c = self.get_theme_colors()
+        self.configure(fg_color=c["bg_primary"])
+        self.nav_header.configure(fg_color=c["bg_primary"], border_color=c["card_border"])
+        self.update_nav_controls_colors()
+        self.refresh_current_view()
+
+    def update_nav_controls_colors(self):
+        c = self.get_theme_colors()
+        if hasattr(self, "brand_lbl"):
+            self.brand_lbl.configure(text_color=c["text_primary"])
+        if hasattr(self, "pro_badge"):
+            self.pro_badge.configure(fg_color=c["badge_cyan_bg"], text_color=c["badge_cyan_text"])
+        if hasattr(self, "nav_tabs_frame"):
+            self.nav_tabs_frame.configure(fg_color=c["bg_card_secondary"], border_color=c["card_border"])
+        if hasattr(self, "theme_btn"):
+            self.theme_btn.configure(fg_color=c["btn_neutral"], text_color=c["btn_neutral_text"], hover_color=c["btn_neutral_hover"])
+        if hasattr(self, "contrast_btn"):
+            self.contrast_btn.configure(
+                text="👁️ AAA" if self.high_contrast else "👁️ Contrast",
+                fg_color="#000000" if self.high_contrast else c["btn_neutral"],
+                text_color="#fde047" if self.high_contrast else c["btn_neutral_text"],
+                hover_color=c["btn_neutral_hover"]
+            )
+        if hasattr(self, "font_down_btn"):
+            self.font_down_btn.configure(fg_color=c["btn_neutral"], text_color=c["btn_neutral_text"], hover_color=c["btn_neutral_hover"])
+        if hasattr(self, "font_up_btn"):
+            self.font_up_btn.configure(fg_color=c["btn_neutral"], text_color=c["btn_neutral_text"], hover_color=c["btn_neutral_hover"])
+        if hasattr(self, "focus_btn"):
+            self.focus_btn.configure(
+                fg_color="#4f46e5" if self.minimalist_focus_mode else c["btn_neutral"],
+                text_color="#ffffff" if self.minimalist_focus_mode else c["btn_neutral_text"],
+                hover_color=c["btn_neutral_hover"]
+            )
+        if hasattr(self, "user_chip_btn"):
+            self.user_chip_btn.configure(fg_color=c["badge_cyan_bg"], text_color=c["badge_cyan_text"])
 
     def adjust_font_scale(self, delta):
         new_scale = round(self.font_scale + delta, 2)
@@ -481,19 +600,12 @@ class OnlineQuizDesktopApp(ctk.CTk):
         c = self.get_theme_colors()
         self.configure(fg_color=c["bg_primary"])
         self.nav_header.configure(fg_color=c["bg_primary"], border_color=c["card_border"])
-        self.contrast_btn.configure(
-            text="👁️ AAA" if self.high_contrast else "👁️ Contrast",
-            fg_color="#000000" if self.high_contrast else "#1e293b",
-            text_color="#fde047" if self.high_contrast else "#ffffff"
-        )
+        self.update_nav_controls_colors()
         self.refresh_current_view()
 
     def toggle_minimalist_mode(self):
         self.minimalist_focus_mode = not self.minimalist_focus_mode
-        self.focus_btn.configure(
-            fg_color="#4f46e5" if self.minimalist_focus_mode else "#1e293b",
-            text_color="#ffffff"
-        )
+        self.update_nav_controls_colors()
         if self.current_nav_view == "exam-arena":
             self.render_exam_arena()
 
@@ -564,36 +676,36 @@ class OnlineQuizDesktopApp(ctk.CTk):
         logo_lbl = ctk.CTkLabel(brand_frame, text="⚡", font=self.scaled_font(20))
         logo_lbl.pack(side="left", padx=(0, 6))
 
-        brand_lbl = ctk.CTkLabel(
+        self.brand_lbl = ctk.CTkLabel(
             brand_frame,
             text="QuizSphere",
             font=self.scaled_font(18, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         )
-        brand_lbl.pack(side="left")
+        self.brand_lbl.pack(side="left")
 
-        pro_badge = ctk.CTkLabel(
+        self.pro_badge = ctk.CTkLabel(
             brand_frame,
             text="Pro 2.0",
             font=self.scaled_font(10, weight="bold"),
-            text_color="#22d3ee",
-            fg_color="#082f49",
+            text_color=c["badge_cyan_text"],
+            fg_color=c["badge_cyan_bg"],
             corner_radius=6,
             padx=7,
             pady=2
         )
-        pro_badge.pack(side="left", padx=(8, 0))
+        self.pro_badge.pack(side="left", padx=(8, 0))
 
         # Center Navigation Tabs (Role Switcher)
-        self.nav_tabs_frame = ctk.CTkFrame(self.nav_header, fg_color="#0f172a", corner_radius=8, border_width=1, border_color="#1e293b")
+        self.nav_tabs_frame = ctk.CTkFrame(self.nav_header, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
         self.nav_tabs_frame.pack(side="left", padx=20, pady=12)
 
         self.tab_candidate_btn = ctk.CTkButton(
             self.nav_tabs_frame,
             text="🎓 Candidate Arena",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#6366f1",
-            hover_color="#4f46e5",
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
             text_color="#ffffff",
             corner_radius=6,
             height=34,
@@ -606,17 +718,30 @@ class OnlineQuizDesktopApp(ctk.CTk):
             text="🛠️ Examiner Studio",
             font=self.scaled_font(12, weight="bold"),
             fg_color="transparent",
-            hover_color="#1e293b",
-            text_color="#94a3b8",
+            hover_color=c["bg_card_hover"],
+            text_color=c["text_secondary"],
             corner_radius=6,
             height=34,
             command=lambda: self.switch_nav_view("examiner-studio")
         )
         self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
 
-        # Right Controls: Accessibility & Session
+        # Right Controls: Accessibility, Theme & Session
         controls_frame = ctk.CTkFrame(self.nav_header, fg_color="transparent")
         controls_frame.pack(side="right", padx=(10, 25), pady=12)
+
+        self.theme_btn = ctk.CTkButton(
+            controls_frame,
+            text="☀️ Light" if self.current_theme == "light" else "🌙 Dark",
+            width=76,
+            height=34,
+            font=self.scaled_font(11, weight="bold"),
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
+            command=self.toggle_appearance_mode
+        )
+        self.theme_btn.pack(side="left", padx=3)
 
         self.contrast_btn = ctk.CTkButton(
             controls_frame,
@@ -624,8 +749,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=84,
             height=34,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
             command=self.toggle_high_contrast
         )
         self.contrast_btn.pack(side="left", padx=3)
@@ -636,8 +762,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=38,
             height=34,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
             command=lambda: self.adjust_font_scale(-0.1)
         )
         self.font_down_btn.pack(side="left", padx=2)
@@ -648,8 +775,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=38,
             height=34,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
             command=lambda: self.adjust_font_scale(0.1)
         )
         self.font_up_btn.pack(side="left", padx=2)
@@ -660,8 +788,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=76,
             height=34,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
             command=self.toggle_minimalist_mode
         )
         self.focus_btn.pack(side="left", padx=3)
@@ -672,9 +801,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             text=f"👤 {self.student_name}",
             height=34,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#082f49",
-            text_color="#38bdf8",
-            hover_color="#0c4a6e",
+            fg_color=c["badge_cyan_bg"],
+            text_color=c["badge_cyan_text"],
+            hover_color=c["badge_cyan_bg"],
             command=self.prompt_change_candidate_name
         )
         self.user_chip_btn.pack(side="left", padx=(6, 0))
@@ -690,23 +819,24 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
     def switch_nav_view(self, view_name):
         self.current_nav_view = view_name
+        c = self.get_theme_colors()
 
         # Update top tab buttons
         if view_name == "candidate-arena":
-            self.tab_candidate_btn.configure(fg_color="#6366f1", text_color="#ffffff")
-            self.tab_examiner_btn.configure(fg_color="transparent", text_color="#94a3b8")
+            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_candidate_arena()
         elif view_name == "examiner-studio":
-            self.tab_examiner_btn.configure(fg_color="#6366f1", text_color="#ffffff")
-            self.tab_candidate_btn.configure(fg_color="transparent", text_color="#94a3b8")
+            self.tab_examiner_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_examiner_studio()
         elif view_name == "exam-arena":
-            self.tab_candidate_btn.configure(fg_color="#6366f1", text_color="#ffffff")
-            self.tab_examiner_btn.configure(fg_color="transparent", text_color="#94a3b8")
+            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_exam_arena()
         elif view_name == "result-scorecard":
-            self.tab_candidate_btn.configure(fg_color="#6366f1", text_color="#ffffff")
-            self.tab_examiner_btn.configure(fg_color="transparent", text_color="#94a3b8")
+            self.tab_candidate_btn.configure(fg_color="#4f46e5", text_color="#ffffff")
+            self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_result_scorecard()
 
     def prompt_change_candidate_name(self):
@@ -737,8 +867,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             left_hero,
             text="Cross-Platform Assessment Engine",
             font=self.scaled_font(10, weight="bold"),
-            text_color="#38bdf8",
-            fg_color="#082f49",
+            text_color=c["badge_cyan_text"],
+            fg_color=c["badge_cyan_bg"],
             corner_radius=6,
             padx=8,
             pady=3
@@ -749,7 +879,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             left_hero,
             text="Explore Available Quizzes",
             font=self.scaled_font(26, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
@@ -768,13 +898,16 @@ class OnlineQuizDesktopApp(ctk.CTk):
             placeholder_text="🔍 Search assessments or topics...",
             width=320,
             height=40,
-            font=self.scaled_font(12)
+            font=self.scaled_font(12),
+            fg_color=c["bg_card"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"]
         )
         self.search_entry.pack(side="right")
         self.search_entry.bind("<KeyRelease>", lambda e: self.filter_quiz_cards())
 
         # Quick Join by Quiz Code Banner
-        join_banner = ctk.CTkFrame(scroll, fg_color="#0f172a", corner_radius=12, border_width=1, border_color="#0891b2")
+        join_banner = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=12, border_width=1, border_color=c["card_border"])
         join_banner.pack(fill="x", pady=(0, 25))
 
         banner_inner = ctk.CTkFrame(join_banner, fg_color="transparent")
@@ -787,7 +920,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             left_info,
             text="🔑 Have a Quiz Code from your Teacher?",
             font=self.scaled_font(15, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
@@ -806,7 +939,10 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=160,
             height=40,
             font=self.scaled_font(13, weight="bold"),
-            justify="center"
+            justify="center",
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"]
         )
         self.join_input.pack(side="left", padx=(0, 10))
 
@@ -816,9 +952,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             width=130,
             height=40,
             font=self.scaled_font(13, weight="bold"),
-            fg_color="#06b6d4",
-            hover_color="#0891b2",
-            text_color="#030712",
+            fg_color=c["btn_cyan"],
+            hover_color="#0369a1",
+            text_color=c["btn_cyan_text"],
             command=self.handle_join_quiz_code
         )
         join_btn.pack(side="left")
@@ -878,8 +1014,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 tags_row,
                 text=q.get("category", "Engineering"),
                 font=self.scaled_font(10, weight="bold"),
-                text_color="#38bdf8",
-                fg_color="#082f49",
+                text_color=c["badge_cyan_text"],
+                fg_color=c["badge_cyan_bg"],
                 corner_radius=6,
                 padx=8,
                 pady=2
@@ -891,8 +1027,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
                     tags_row,
                     text=tag,
                     font=self.scaled_font(10, weight="bold"),
-                    text_color="#818cf8",
-                    fg_color="#1e1b4b",
+                    text_color=c["badge_indigo_text"],
+                    fg_color=c["badge_indigo_bg"],
                     corner_radius=6,
                     padx=8,
                     pady=2
@@ -903,8 +1039,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 tags_row,
                 text=f"Code: {q['joinCode']}",
                 font=self.scaled_font(11, weight="bold"),
-                text_color="#06b6d4",
-                fg_color="#082f49",
+                text_color=c["badge_cyan_text"],
+                fg_color=c["badge_cyan_bg"],
                 corner_radius=6,
                 padx=8,
                 pady=2
@@ -915,7 +1051,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 inner,
                 text=q["title"],
                 font=self.scaled_font(17, weight="bold"),
-                text_color="#ffffff",
+                text_color=c["text_primary"],
                 anchor="w"
             ).pack(fill="x", pady=(4, 4))
 
@@ -945,8 +1081,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
                     chips_box,
                     text=chip_text,
                     font=self.scaled_font(11, weight="bold"),
-                    text_color="#94a3b8",
-                    fg_color="#1e293b",
+                    text_color=c["text_secondary"],
+                    fg_color=c["bg_card_secondary"],
                     corner_radius=6,
                     padx=9,
                     pady=4
@@ -957,9 +1093,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 bottom_row,
                 text="Start Assessment ⚡",
                 font=self.scaled_font(12, weight="bold"),
-                fg_color="#06b6d4",
-                hover_color="#0891b2",
-                text_color="#030712",
+                fg_color=c["accent_primary"],
+                hover_color="#4338ca",
+                text_color="#ffffff",
                 height=36,
                 corner_radius=8,
                 command=lambda quiz=q: self.open_readiness_modal(quiz)
@@ -988,9 +1124,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
         modal.geometry("560x520")
         modal.transient(self)
         modal.grab_set()
-        modal.configure(fg_color="#0a0e17")
+        modal.configure(fg_color=c["bg_primary"])
 
-        content = ctk.CTkFrame(modal, fg_color="#0f172a", corner_radius=16, border_width=1, border_color="#1e293b")
+        content = ctk.CTkFrame(modal, fg_color=c["bg_card"], corner_radius=16, border_width=c["border_width"], border_color=c["card_border"])
         content.pack(fill="both", expand=True, padx=25, pady=25)
 
         # Header
@@ -998,45 +1134,45 @@ class OnlineQuizDesktopApp(ctk.CTk):
             content,
             text="⚡ Assessment Readiness Check",
             font=self.scaled_font(18, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w", padx=25, pady=(20, 4))
 
         ctk.CTkLabel(
             content,
             text=f"Selected: {quiz['title']}",
             font=self.scaled_font(13),
-            text_color="#38bdf8"
+            text_color=c["text_cyan"]
         ).pack(anchor="w", padx=25, pady=(0, 15))
 
         # Metadata Chips
-        meta_row = ctk.CTkFrame(content, fg_color="#1e293b", corner_radius=8)
+        meta_row = ctk.CTkFrame(content, fg_color=c["bg_card_secondary"], corner_radius=8)
         meta_row.pack(fill="x", padx=25, pady=(0, 15))
 
-        ctk.CTkLabel(meta_row, text=f"⏱️ Duration: {quiz['durationMinutes']} Mins", font=self.scaled_font(11, weight="bold")).pack(side="left", padx=12, pady=8)
-        ctk.CTkLabel(meta_row, text=f"🎯 Pass: {quiz['passingScore']}%", font=self.scaled_font(11, weight="bold")).pack(side="left", padx=12, pady=8)
-        ctk.CTkLabel(meta_row, text=f"❓ Items: {len(quiz['questions'])}", font=self.scaled_font(11, weight="bold")).pack(side="left", padx=12, pady=8)
+        ctk.CTkLabel(meta_row, text=f"⏱️ Duration: {quiz['durationMinutes']} Mins", font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=12, pady=8)
+        ctk.CTkLabel(meta_row, text=f"🎯 Pass: {quiz['passingScore']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=12, pady=8)
+        ctk.CTkLabel(meta_row, text=f"❓ Items: {len(quiz['questions'])}", font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=12, pady=8)
 
         # Candidate Name Entry
         ctk.CTkLabel(
             content,
             text="Candidate Legal Name:",
             font=self.scaled_font(12, weight="bold"),
-            text_color="#f8fafc"
+            text_color=c["text_primary"]
         ).pack(anchor="w", padx=25, pady=(0, 4))
 
-        name_in = ctk.CTkEntry(content, height=38, font=self.scaled_font(13))
+        name_in = ctk.CTkEntry(content, height=38, font=self.scaled_font(13), fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         name_in.insert(0, self.student_name)
         name_in.pack(fill="x", padx=25, pady=(0, 15))
 
         # Proctoring & Anti-Cheat Rules Box
-        rules_box = ctk.CTkFrame(content, fg_color="#161e2e", corner_radius=10, border_width=1, border_color="#334155")
+        rules_box = ctk.CTkFrame(content, fg_color=c["bg_card_secondary"], corner_radius=10, border_width=1, border_color=c["card_border"])
         rules_box.pack(fill="x", padx=25, pady=(0, 20))
 
         ctk.CTkLabel(
             rules_box,
             text="🛡️ Proctoring & Security Rules",
             font=self.scaled_font(12, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w", padx=15, pady=(10, 4))
 
         rules = [
@@ -1050,7 +1186,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 rules_box,
                 text=r,
                 font=self.scaled_font(11),
-                text_color="#94a3b8",
+                text_color=c["text_secondary"],
                 anchor="w"
             ).pack(anchor="w", padx=15, pady=1)
 
@@ -1070,9 +1206,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             btns_row,
             text="Begin Examination ⚡",
             font=self.scaled_font(13, weight="bold"),
-            fg_color="#06b6d4",
-            hover_color="#0891b2",
-            text_color="#030712",
+            fg_color=c["btn_cyan"],
+            hover_color="#0369a1",
+            text_color=c["btn_cyan_text"],
             height=40,
             command=on_begin
         )
@@ -1082,9 +1218,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             btns_row,
             text="Cancel",
             font=self.scaled_font(13),
-            fg_color="#1e293b",
-            hover_color="#334155",
-            text_color="#ffffff",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
             height=40,
             command=modal.destroy
         )
@@ -1161,14 +1297,14 @@ class OnlineQuizDesktopApp(ctk.CTk):
             left_meta,
             text=f"Question {self.current_q_index + 1} of {total_q}",
             font=self.scaled_font(13, weight="bold"),
-            text_color="#38bdf8"
+            text_color=c["text_cyan"]
         ).pack(side="left", padx=(0, 12))
 
         ctk.CTkLabel(
             left_meta,
             text=f"|  {self.active_quiz['title']}",
             font=self.scaled_font(13),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(side="left")
 
         # Right: Timer & Submit
@@ -1181,8 +1317,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             right_tools,
             text=f"⏱️ {mins:02d}:{secs:02d}",
             font=self.scaled_font(14, weight="bold"),
-            text_color="#ef4444" if self.time_left_seconds <= 60 else "#38bdf8",
-            fg_color="#082f49",
+            text_color="#ef4444" if self.time_left_seconds <= 60 else c["badge_cyan_text"],
+            fg_color=c["badge_cyan_bg"],
             corner_radius=6,
             padx=12,
             pady=4
@@ -1194,9 +1330,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             right_tools,
             text="★ Marked for Review" if is_marked else "☆ Mark for Review",
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#f59e0b" if is_marked else "#1e293b",
-            hover_color="#d97706" if is_marked else "#334155",
-            text_color="#000000" if is_marked else "#ffffff",
+            fg_color="#f59e0b" if is_marked else c["btn_neutral"],
+            hover_color="#d97706" if is_marked else c["btn_neutral_hover"],
+            text_color="#000000" if is_marked else c["btn_neutral_text"],
             height=34,
             command=self.toggle_review_flag
         )
@@ -1236,7 +1372,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             q_inner,
             text=f"{self.current_q_index + 1}.  {q['text']}",
             font=self.scaled_font(17, weight="bold"),
-            text_color="#ffffff",
+            text_color=c["text_primary"],
             anchor="w",
             justify="left",
             wraplength=760 if not self.minimalist_focus_mode else 1050
@@ -1244,13 +1380,13 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         # Code block (if present)
         if q.get("code"):
-            code_card = ctk.CTkFrame(q_inner, fg_color="#030712", corner_radius=8, border_width=1, border_color="#0891b2")
+            code_card = ctk.CTkFrame(q_inner, fg_color=c["code_bg"], corner_radius=8, border_width=1, border_color=c["card_border"])
             code_card.pack(fill="x", pady=(0, 16))
             ctk.CTkLabel(
                 code_card,
                 text=q["code"],
                 font=ctk.CTkFont(family="Consolas", size=13),
-                text_color="#22d3ee",
+                text_color=c["code_text"],
                 justify="left",
                 anchor="w",
                 padx=16,
@@ -1265,10 +1401,10 @@ class OnlineQuizDesktopApp(ctk.CTk):
             is_selected = current_selection == idx
             opt_frame = ctk.CTkFrame(
                 q_inner,
-                fg_color="#1e1b4b" if is_selected else "#111827",
+                fg_color=c["option_selected_bg"] if is_selected else c["bg_card"],
                 corner_radius=8,
                 border_width=2 if is_selected else 1,
-                border_color="#6366f1" if is_selected else "#1e293b"
+                border_color="#4f46e5" if is_selected else c["card_border"]
             )
             opt_frame.pack(fill="x", pady=6)
 
@@ -1280,8 +1416,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 opt_row,
                 text=letters[idx] if idx < len(letters) else str(idx + 1),
                 font=self.scaled_font(12, weight="bold"),
-                text_color="#ffffff" if is_selected else "#94a3b8",
-                fg_color="#6366f1" if is_selected else "#1e293b",
+                text_color="#ffffff" if is_selected else c["text_secondary"],
+                fg_color="#4f46e5" if is_selected else c["bg_card_secondary"],
                 corner_radius=12,
                 width=28,
                 height=28
@@ -1293,7 +1429,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 opt_row,
                 text=opt_text,
                 font=self.scaled_font(14, weight="bold" if is_selected else "normal"),
-                text_color="#ffffff",
+                text_color=c["text_primary"],
                 anchor="w",
                 justify="left"
             )
@@ -1304,7 +1440,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 opt_row,
                 text=f"[{idx + 1} / {letters[idx]}]",
                 font=self.scaled_font(10, weight="bold"),
-                text_color="#64748b"
+                text_color=c["text_dim"]
             )
             hotkey_chip.pack(side="right")
 
@@ -1320,8 +1456,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             nav_row,
             text="← Previous Question",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
             state="normal" if self.current_q_index > 0 else "disabled",
             height=38,
             command=lambda: self.navigate_question(-1)
@@ -1332,8 +1469,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             nav_row,
             text="Finish & Review" if self.current_q_index == total_q - 1 else "Next Question →",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#6366f1",
-            hover_color="#4f46e5",
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
+            text_color="#ffffff",
             height=38,
             command=lambda: self.navigate_question(1)
         )
@@ -1359,7 +1497,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 p_inner,
                 text="Question Palette",
                 font=self.scaled_font(13, weight="bold"),
-                text_color="#ffffff"
+                text_color=c["text_primary"]
             ).pack(anchor="w", pady=(0, 12))
 
             grid_box = ctk.CTkFrame(p_inner, fg_color="transparent")
@@ -1373,12 +1511,16 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 # Determine badge color
                 if i == self.current_q_index:
                     btn_color = c["palette_current"]
+                    btn_text_color = "#ffffff"
                 elif question["id"] in self.user_answers:
                     btn_color = c["palette_answered"]
+                    btn_text_color = "#ffffff"
                 elif question["id"] in self.review_flags:
                     btn_color = c["palette_review"]
+                    btn_text_color = "#000000"
                 else:
                     btn_color = c["palette_unanswered"]
+                    btn_text_color = c["palette_unanswered_text"]
 
                 p_btn = ctk.CTkButton(
                     grid_box,
@@ -1388,20 +1530,21 @@ class OnlineQuizDesktopApp(ctk.CTk):
                     corner_radius=8,
                     font=self.scaled_font(12, weight="bold"),
                     fg_color=btn_color,
+                    text_color=btn_text_color,
                     hover_color="#0369a1",
                     command=lambda target_idx=i: self.jump_to_question(target_idx)
                 )
                 p_btn.grid(row=row_idx, column=col_idx, padx=3, pady=3)
 
             # Palette Legend
-            legend_box = ctk.CTkFrame(p_inner, fg_color="#1e293b", corner_radius=8)
+            legend_box = ctk.CTkFrame(p_inner, fg_color=c["bg_card_secondary"], corner_radius=8)
             legend_box.pack(fill="x", side="bottom", pady=(10, 0))
 
             legends = [
                 ("● Answered", "#10b981"),
                 ("● Marked for Review", "#f59e0b"),
-                ("● Current Question", "#0284c7"),
-                ("● Unanswered", "#64748b")
+                ("● Current Question", "#4f46e5"),
+                ("● Unanswered", c["text_dim"])
             ]
             for leg_text, leg_color in legends:
                 ctk.CTkLabel(
@@ -1566,7 +1709,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             inner,
             text=attempt["quizTitle"],
             font=self.scaled_font(22, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
@@ -1577,7 +1720,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         ).pack(anchor="w", pady=(2, 16))
 
         # Score Gauge Box
-        gauge_box = ctk.CTkFrame(inner, fg_color="#1e293b", corner_radius=12)
+        gauge_box = ctk.CTkFrame(inner, fg_color=c["bg_card_secondary"], corner_radius=12)
         gauge_box.pack(fill="x", pady=(0, 18))
 
         g_inner = ctk.CTkFrame(gauge_box, fg_color="transparent")
@@ -1595,7 +1738,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             g_inner,
             text=stats_meta,
             font=self.scaled_font(13),
-            text_color="#f8fafc",
+            text_color=c["text_primary"],
             justify="left"
         ).pack(side="left")
 
@@ -1607,8 +1750,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             act_row,
             text="Return to Candidate Arena 🎓",
             font=self.scaled_font(13, weight="bold"),
-            fg_color="#6366f1",
-            hover_color="#4f46e5",
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
+            text_color="#ffffff",
             height=40,
             command=lambda: self.switch_nav_view("candidate-arena")
         )
@@ -1618,8 +1762,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             act_row,
             text="Export Gradebook CSV 📥",
             font=self.scaled_font(13),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
             height=40,
             command=self.handle_export_csv
         )
@@ -1630,7 +1775,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             scroll,
             text="Detailed Question Review & Explanations:",
             font=self.scaled_font(18, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w", pady=(15, 12))
 
         # Review Cards
@@ -1655,7 +1800,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 r_top,
                 text=f"Question {item['index']}",
                 font=self.scaled_font(14, weight="bold"),
-                text_color="#ffffff"
+                text_color=c["text_primary"]
             ).pack(side="left")
 
             badge_text = "Correct ✅" if item["isCorrect"] else ("Skipped ⚠️" if item["userSelection"] is None else "Incorrect ❌")
@@ -1665,7 +1810,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 text=badge_text,
                 font=self.scaled_font(11, weight="bold"),
                 text_color=badge_color,
-                fg_color="#1e293b",
+                fg_color=c["bg_card_secondary"],
                 corner_radius=6,
                 padx=8,
                 pady=2
@@ -1675,7 +1820,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 r_inner,
                 text=item["text"],
                 font=self.scaled_font(14, weight="bold"),
-                text_color="#ffffff",
+                text_color=c["text_primary"],
                 anchor="w",
                 justify="left"
             ).pack(fill="x", pady=(0, 10))
@@ -1700,13 +1845,13 @@ class OnlineQuizDesktopApp(ctk.CTk):
             ).pack(fill="x", pady=(2, 8))
 
             if item.get("explanation"):
-                exp_box = ctk.CTkFrame(r_inner, fg_color="#082f49", corner_radius=6)
+                exp_box = ctk.CTkFrame(r_inner, fg_color=c["badge_cyan_bg"], corner_radius=6)
                 exp_box.pack(fill="x", pady=(4, 0))
                 ctk.CTkLabel(
                     exp_box,
                     text=f"💡 Explanation: {item['explanation']}",
                     font=self.scaled_font(12),
-                    text_color="#38bdf8",
+                    text_color=c["badge_cyan_text"],
                     anchor="w",
                     justify="left",
                     padx=12,
@@ -1734,7 +1879,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             left_hero,
             text="Examiner Studio & Assessment Builder",
             font=self.scaled_font(24, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
@@ -1750,8 +1895,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
         metrics_row.pack(fill="x", pady=(0, 25))
 
         metrics_data = [
-            ("Total Assessments", f"{stats['totalQuizzes']} Quizzes", "#38bdf8"),
-            ("Total Submissions", f"{stats['totalAttempts']} Attempts", "#818cf8"),
+            ("Total Assessments", f"{stats['totalQuizzes']} Quizzes", c["text_cyan"]),
+            ("Total Submissions", f"{stats['totalAttempts']} Attempts", c["accent_primary"]),
             ("Average Pass Rate", f"{stats['passRate']}% Passed", "#10b981"),
             ("Active Students", f"{stats['activeStudents']} Candidates", "#f59e0b")
         ]
@@ -1763,7 +1908,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             m_inner = ctk.CTkFrame(m_card, fg_color="transparent")
             m_inner.pack(fill="both", expand=True, padx=18, pady=16)
 
-            ctk.CTkLabel(m_inner, text=title, font=self.scaled_font(11, weight="bold"), text_color="#94a3b8").pack(anchor="w")
+            ctk.CTkLabel(m_inner, text=title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
             ctk.CTkLabel(m_inner, text=val, font=self.scaled_font(20, weight="bold"), text_color=col).pack(anchor="w", pady=(4, 0))
 
         # Action Toolbar (New Assessment, AI Generator, CSV Export, DB Backup)
@@ -1777,8 +1922,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             t_inner,
             text="+ Create Assessment",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#6366f1",
-            hover_color="#4f46e5",
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
+            text_color="#ffffff",
             command=self.open_create_quiz_dialog
         ).pack(side="left", padx=(0, 10))
 
@@ -1786,9 +1932,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             t_inner,
             text="🤖 AI Quiz Synthesizer",
             font=self.scaled_font(12, weight="bold"),
-            fg_color="#06b6d4",
-            hover_color="#0891b2",
-            text_color="#030712",
+            fg_color=c["btn_cyan"],
+            hover_color="#0369a1",
+            text_color=c["btn_cyan_text"],
             command=self.open_ai_synthesizer_dialog
         ).pack(side="left", padx=(0, 10))
 
@@ -1796,8 +1942,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             t_inner,
             text="📥 Export Gradebook CSV",
             font=self.scaled_font(12),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
             command=self.handle_export_csv
         ).pack(side="left", padx=(0, 10))
 
@@ -1805,8 +1952,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             t_inner,
             text="💾 Database Snapshot",
             font=self.scaled_font(12),
-            fg_color="#1e293b",
-            hover_color="#334155",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
             command=self.handle_db_backup
         ).pack(side="left")
 
@@ -1815,7 +1963,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             scroll,
             text="Recent Candidate Submissions & Gradebook:",
             font=self.scaled_font(16, weight="bold"),
-            text_color="#ffffff"
+            text_color=c["text_primary"]
         ).pack(anchor="w", pady=(10, 10))
 
         table_card = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=12, border_width=c["border_width"], border_color=c["card_border"])
@@ -1823,30 +1971,30 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         reports = self.db.get_teacher_reports()
         if not reports:
-            ctk.CTkLabel(table_card, text="No candidate submissions recorded yet.", font=self.scaled_font(13), text_color="#94a3b8").pack(pady=30)
+            ctk.CTkLabel(table_card, text="No candidate submissions recorded yet.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=30)
         else:
             # Table Header
-            th_frame = ctk.CTkFrame(table_card, fg_color="#1e293b", corner_radius=0)
+            th_frame = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
             th_frame.pack(fill="x")
 
             headers = [("Candidate", 180), ("Assessment", 240), ("Score", 90), ("Percent", 90), ("Status", 100), ("Violations", 90), ("Date", 160)]
             for h_title, h_width in headers:
-                lbl = ctk.CTkLabel(th_frame, text=h_title, font=self.scaled_font(11, weight="bold"), text_color="#cbd5e1", width=h_width, anchor="w")
+                lbl = ctk.CTkLabel(th_frame, text=h_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=h_width, anchor="w")
                 lbl.pack(side="left", padx=10, pady=8)
 
             for idx, r in enumerate(reports[:15]):
-                row_frame = ctk.CTkFrame(table_card, fg_color="#0f172a" if idx % 2 == 0 else "#111827", corner_radius=0)
+                row_frame = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
                 row_frame.pack(fill="x")
 
                 passed = r["passed"]
                 vals = [
-                    (r["studentName"], 180, "#ffffff"),
-                    (r["quizTitle"], 240, "#38bdf8"),
-                    (f"{r['score']} / {r['totalQuestions']}", 90, "#ffffff"),
+                    (r["studentName"], 180, c["text_primary"]),
+                    (r["quizTitle"], 240, c["text_cyan"]),
+                    (f"{r['score']} / {r['totalQuestions']}", 90, c["text_primary"]),
                     (f"{r['percentage']}%", 90, "#10b981" if passed else "#ef4444"),
                     ("PASSED" if passed else "FAILED", 100, "#10b981" if passed else "#ef4444"),
                     (str(r["cheatViolations"]), 90, "#f59e0b" if r["cheatViolations"] > 0 else "#64748b"),
-                    (r["submittedAt"][:16] if r["submittedAt"] else "", 160, "#94a3b8")
+                    (r["submittedAt"][:16] if r["submittedAt"] else "", 160, c["text_secondary"])
                 ]
                 for v_text, v_width, v_color in vals:
                     ctk.CTkLabel(row_frame, text=v_text, font=self.scaled_font(11), text_color=v_color, width=v_width, anchor="w").pack(side="left", padx=10, pady=7)
@@ -1863,26 +2011,27 @@ class OnlineQuizDesktopApp(ctk.CTk):
     # DIALOGS: CREATE QUIZ & AI SYNTHESIZER
     # =========================================================================
     def open_create_quiz_dialog(self):
+        c = self.get_theme_colors()
         dialog = ctk.CTkToplevel(self)
         dialog.title("Create New Assessment")
         dialog.geometry("640x620")
         dialog.transient(self)
         dialog.grab_set()
-        dialog.configure(fg_color="#0a0e17")
+        dialog.configure(fg_color=c["bg_primary"])
 
-        scroll = ctk.CTkScrollableFrame(dialog, fg_color="#0f172a", corner_radius=12)
+        scroll = ctk.CTkScrollableFrame(dialog, fg_color=c["bg_card"], corner_radius=12, border_width=c["border_width"], border_color=c["card_border"])
         scroll.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(scroll, text="⚡ New Assessment Setup", font=self.scaled_font(18, weight="bold"), text_color="#ffffff").pack(anchor="w", pady=(0, 15))
+        ctk.CTkLabel(scroll, text="⚡ New Assessment Setup", font=self.scaled_font(18, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 15))
 
         # Title
-        ctk.CTkLabel(scroll, text="Assessment Title:", font=self.scaled_font(12, weight="bold")).pack(anchor="w", pady=(2, 2))
-        title_in = ctk.CTkEntry(scroll, placeholder_text="e.g. Distributed Database Architecture", height=36)
+        ctk.CTkLabel(scroll, text="Assessment Title:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(2, 2))
+        title_in = ctk.CTkEntry(scroll, placeholder_text="e.g. Distributed Database Architecture", height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         title_in.pack(fill="x", pady=(0, 8))
 
         # Category
-        ctk.CTkLabel(scroll, text="Category:", font=self.scaled_font(12, weight="bold")).pack(anchor="w", pady=(2, 2))
-        cat_in = ctk.CTkEntry(scroll, placeholder_text="e.g. Cloud Engineering", height=36)
+        ctk.CTkLabel(scroll, text="Category:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(2, 2))
+        cat_in = ctk.CTkEntry(scroll, placeholder_text="e.g. Cloud Engineering", height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         cat_in.insert(0, "Cloud Engineering")
         cat_in.pack(fill="x", pady=(0, 8))
 
@@ -1890,26 +2039,26 @@ class OnlineQuizDesktopApp(ctk.CTk):
         meta_row = ctk.CTkFrame(scroll, fg_color="transparent")
         meta_row.pack(fill="x", pady=(0, 10))
 
-        ctk.CTkLabel(meta_row, text="Duration (Minutes):", font=self.scaled_font(12, weight="bold")).pack(side="left", padx=(0, 6))
-        dur_in = ctk.CTkEntry(meta_row, width=80, height=36)
+        ctk.CTkLabel(meta_row, text="Duration (Minutes):", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=(0, 6))
+        dur_in = ctk.CTkEntry(meta_row, width=80, height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         dur_in.insert(0, "15")
         dur_in.pack(side="left", padx=(0, 20))
 
-        ctk.CTkLabel(meta_row, text="Passing Score (%):", font=self.scaled_font(12, weight="bold")).pack(side="left", padx=(0, 6))
-        pass_in = ctk.CTkEntry(meta_row, width=80, height=36)
+        ctk.CTkLabel(meta_row, text="Passing Score (%):", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=(0, 6))
+        pass_in = ctk.CTkEntry(meta_row, width=80, height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         pass_in.insert(0, "70")
         pass_in.pack(side="left")
 
         # Question 1
-        ctk.CTkLabel(scroll, text="Question 1 Prompt:", font=self.scaled_font(12, weight="bold"), text_color="#38bdf8").pack(anchor="w", pady=(10, 2))
-        q1_in = ctk.CTkEntry(scroll, placeholder_text="e.g. What guarantees read isolation in ACID transactions?", height=36)
+        ctk.CTkLabel(scroll, text="Question 1 Prompt:", font=self.scaled_font(12, weight="bold"), text_color=c["text_cyan"]).pack(anchor="w", pady=(10, 2))
+        q1_in = ctk.CTkEntry(scroll, placeholder_text="e.g. What guarantees read isolation in ACID transactions?", height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         q1_in.pack(fill="x", pady=(0, 8))
 
         # Options
         opt_inputs = []
         for i in range(4):
-            ctk.CTkLabel(scroll, text=f"Option {chr(65 + i)}:", font=self.scaled_font(11)).pack(anchor="w")
-            oi = ctk.CTkEntry(scroll, height=32)
+            ctk.CTkLabel(scroll, text=f"Option {chr(65 + i)}:", font=self.scaled_font(11), text_color=c["text_secondary"]).pack(anchor="w")
+            oi = ctk.CTkEntry(scroll, height=32, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
             oi.pack(fill="x", pady=(0, 4))
             opt_inputs.append(oi)
 
@@ -1955,34 +2104,36 @@ class OnlineQuizDesktopApp(ctk.CTk):
             font=self.scaled_font(13, weight="bold"),
             fg_color="#10b981",
             hover_color="#059669",
+            text_color="#ffffff",
             height=40,
             command=on_save
         ).pack(fill="x", pady=(15, 10))
 
     def open_ai_synthesizer_dialog(self):
+        c = self.get_theme_colors()
         dialog = ctk.CTkToplevel(self)
         dialog.title("AI Assessment Synthesizer")
         dialog.geometry("560x420")
         dialog.transient(self)
         dialog.grab_set()
-        dialog.configure(fg_color="#0a0e17")
+        dialog.configure(fg_color=c["bg_primary"])
 
-        content = ctk.CTkFrame(dialog, fg_color="#0f172a", corner_radius=12)
+        content = ctk.CTkFrame(dialog, fg_color=c["bg_card"], corner_radius=12, border_width=c["border_width"], border_color=c["card_border"])
         content.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(content, text="🤖 AI Assessment Synthesizer", font=self.scaled_font(18, weight="bold"), text_color="#ffffff").pack(anchor="w", padx=20, pady=(20, 4))
-        ctk.CTkLabel(content, text="Generate multi-item quiz banks dynamically with verified keys.", font=self.scaled_font(12), text_color="#94a3b8").pack(anchor="w", padx=20, pady=(0, 16))
+        ctk.CTkLabel(content, text="🤖 AI Assessment Synthesizer", font=self.scaled_font(18, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", padx=20, pady=(20, 4))
+        ctk.CTkLabel(content, text="Generate multi-item quiz banks dynamically with verified keys.", font=self.scaled_font(12), text_color=c["text_secondary"]).pack(anchor="w", padx=20, pady=(0, 16))
 
-        ctk.CTkLabel(content, text="Subject / Topic:", font=self.scaled_font(12, weight="bold")).pack(anchor="w", padx=20, pady=(0, 2))
-        topic_in = ctk.CTkEntry(content, placeholder_text="e.g. Distributed Consensus Algorithms", height=38)
+        ctk.CTkLabel(content, text="Subject / Topic:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", padx=20, pady=(0, 2))
+        topic_in = ctk.CTkEntry(content, placeholder_text="e.g. Distributed Consensus Algorithms", height=38, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         topic_in.insert(0, "Distributed Systems (Raft & Paxos)")
         topic_in.pack(fill="x", padx=20, pady=(0, 12))
 
         diff_row = ctk.CTkFrame(content, fg_color="transparent")
         diff_row.pack(fill="x", padx=20, pady=(0, 20))
 
-        ctk.CTkLabel(diff_row, text="Difficulty:", font=self.scaled_font(12, weight="bold")).pack(side="left", padx=(0, 10))
-        diff_menu = ctk.CTkOptionMenu(diff_row, values=["Beginner", "Medium", "Advanced"], height=36)
+        ctk.CTkLabel(diff_row, text="Difficulty:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=(0, 10))
+        diff_menu = ctk.CTkOptionMenu(diff_row, values=["Beginner", "Medium", "Advanced"], height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], button_color=c["card_border"])
         diff_menu.pack(side="left")
 
         def on_generate():
@@ -1995,9 +2146,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             content,
             text="Synthesize Quiz ⚡",
             font=self.scaled_font(13, weight="bold"),
-            fg_color="#06b6d4",
-            hover_color="#0891b2",
-            text_color="#030712",
+            fg_color=c["btn_cyan"],
+            hover_color="#0369a1",
+            text_color=c["btn_cyan_text"],
             height=42,
             command=on_generate
         ).pack(fill="x", padx=20, pady=(10, 20))

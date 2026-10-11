@@ -241,8 +241,30 @@ window.confirmGenerateWithAI = async function() {
   }
 };
 
-// Accessibility Controls: High Contrast, Font Resize, Minimalist Mode
+// Accessibility & Theme Controls: Professional Light (Default), Dark, High Contrast, Font Resize, Minimalist Mode
 window.webFontScale = 1.0;
+
+function updateThemeButtonUI(isDark) {
+  const icon = document.getElementById("themeToggleIcon");
+  const text = document.getElementById("themeToggleText");
+  if (icon && text) {
+    if (isDark) {
+      icon.textContent = "🌙";
+      text.textContent = "Dark";
+    } else {
+      icon.textContent = "☀️";
+      text.textContent = "Light";
+    }
+  }
+}
+
+window.toggleWebTheme = function() {
+  document.body.classList.toggle("dark-theme");
+  const isDark = document.body.classList.contains("dark-theme");
+  localStorage.setItem("quiz_theme", isDark ? "dark" : "light");
+  updateThemeButtonUI(isDark);
+  window.showToast?.(isDark ? "Dark Theme Activated" : "Professional Light Theme (Default)", "info");
+};
 
 window.toggleWebHighContrast = function() {
   document.body.classList.toggle("high-contrast");
@@ -267,6 +289,16 @@ window.toggleWebMinimalistLayout = function() {
 
 // App Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  // Theme initialization: Default is Light Theme for all
+  const savedTheme = localStorage.getItem("quiz_theme") || "light";
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-theme");
+    updateThemeButtonUI(true);
+  } else {
+    document.body.classList.remove("dark-theme");
+    updateThemeButtonUI(false);
+  }
+
   // Restore accessibility preferences
   if (localStorage.getItem("quiz_high_contrast") === "1") {
     document.body.classList.add("high-contrast");

@@ -32,8 +32,12 @@ body {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.28;
+  opacity: 0.12;
   animation: floatOrb 20s infinite alternate ease-in-out;
+}
+
+body.dark-theme .orb {
+  opacity: 0.28;
 }
 
 .orb-1 {
@@ -73,10 +77,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(10, 14, 23, 0.82);
+  background: var(--nav-bg);
   backdrop-filter: var(--blur-glass);
   -webkit-backdrop-filter: var(--blur-glass);
   border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   padding: 0.85rem 1.5rem;
   display: flex;
   align-items: center;
@@ -95,30 +100,31 @@ body {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-cyan-neon);
+  box-shadow: var(--shadow-sm);
   font-size: 1.25rem;
+  color: #ffffff;
 }
 
 .brand-title {
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(120deg, #ffffff 40%, var(--accent-cyan));
+  background: linear-gradient(120deg, var(--text-main) 50%, var(--accent-indigo));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .brand-badge {
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
-  background: var(--bg-glass);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   color: var(--accent-cyan);
   margin-left: 0.25rem;
@@ -133,7 +139,7 @@ body {
 /* Role Toggle Switch */
 .role-switcher {
   display: flex;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 0.25rem;
@@ -145,7 +151,7 @@ body {
   color: var(--text-muted);
   font-family: inherit;
   font-size: 0.825rem;
-  font-weight: 500;
+  font-weight: 600;
   padding: 0.4rem 0.95rem;
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -156,8 +162,16 @@ body {
 }
 
 .role-tab-btn.active {
-  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+  background: linear-gradient(135deg, var(--accent-indigo), #4338ca);
   color: #ffffff;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+body.dark-theme .role-tab-btn.active {
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+  box-shadow: var(--shadow-neon);
+}
   font-weight: 600;
   box-shadow: var(--shadow-neon);
 }
@@ -270,22 +284,36 @@ body.minimalist-mode .exam-question-col {
 
 /* Accessibility Control Buttons */
 .access-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   color: var(--text-main);
-  padding: 0.35rem 0.65rem;
+  padding: 0.38rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .access-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-indigo);
+  color: var(--accent-indigo);
+}
+
+body.dark-theme .access-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-subtle);
+  box-shadow: none;
+}
+
+body.dark-theme .access-btn:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: var(--accent-cyan);
+  color: #ffffff;
 }
 
