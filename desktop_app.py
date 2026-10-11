@@ -445,7 +445,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("QuizSphere Pro — Enterprise Multi-Role Desktop Application (TQM Edition)")
+        self.title("QuizSphere Pro — Enterprise Multi-Role Desktop Application")
         self.geometry("1260x820")
         self.minsize(1050, 700)
 
@@ -953,37 +953,11 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         # Brand Header
         header = ctk.CTkFrame(card, fg_color="transparent")
-        header.pack(fill="x", padx=35, pady=(30, 15))
+        header.pack(fill="x", padx=35, pady=(30, 8))
 
         title_row = ctk.CTkFrame(header, fg_color="transparent")
         title_row.pack(anchor="center")
         ctk.CTkLabel(title_row, text="⚡ QuizSphere Pro", font=ctk.CTkFont(size=28, weight="bold"), text_color="#ffffff").pack(side="left")
-
-        ctk.CTkLabel(
-            header,
-            text="Enterprise Multi-Role Assessment Platform • TQM Edition (BBAT104)",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#38bdf8"
-        ).pack(anchor="center", pady=(4, 8))
-
-        badges_row = ctk.CTkFrame(header, fg_color="transparent")
-        badges_row.pack(anchor="center")
-        for b_text, b_color in [
-            ("Zero-Latency Grading (<250ms)", "#10b981"),
-            ("Role-Governed Security", "#6366f1"),
-            ("Proctoring & Audit Trail", "#f59e0b")
-        ]:
-            chip = ctk.CTkLabel(
-                badges_row,
-                text=f"● {b_text}",
-                font=ctk.CTkFont(size=11, weight="bold"),
-                text_color=b_color,
-                fg_color="#1e293b",
-                corner_radius=6,
-                padx=8,
-                pady=2
-            )
-            chip.pack(side="left", padx=4)
 
         ctk.CTkFrame(card, height=1, fg_color="#1e293b").pack(fill="x", padx=30, pady=15)
 
