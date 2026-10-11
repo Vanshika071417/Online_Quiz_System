@@ -16,6 +16,24 @@ class QuizStorage {
   initStorage() {
     if (!localStorage.getItem(STORAGE_KEYS.QUIZZES)) {
       localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(DEFAULT_QUIZZES));
+    } else {
+      try {
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUIZZES));
+        let modified = false;
+        existing.forEach((q, idx) => {
+          if (!q.joinCode) {
+            q.joinCode = `QZ-${1001 + idx * 1001}`;
+            modified = true;
+          }
+          if (!q.teacherName) {
+            q.teacherName = "Prof. Alan Turing";
+            modified = true;
+          }
+        });
+        if (modified) {
+          localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(existing));
+        }
+      } catch (e) {}
     }
     if (!localStorage.getItem(STORAGE_KEYS.ATTEMPTS)) {
       localStorage.setItem(STORAGE_KEYS.ATTEMPTS, JSON.stringify([]));

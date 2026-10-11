@@ -2,6 +2,8 @@
 const DEFAULT_QUIZZES = [
   {
     id: "quiz-web-dev",
+    joinCode: "QZ-1001",
+    teacherName: "Prof. Alan Turing",
     title: "Full Stack Web & System Architecture",
     category: "Software Engineering",
     description: "Evaluate your core knowledge of modern web protocols, asynchronous JavaScript, database transactions, and scalable architecture.",
@@ -78,6 +80,8 @@ const DEFAULT_QUIZZES = [
   },
   {
     id: "quiz-dsa",
+    joinCode: "QZ-2002",
+    teacherName: "Prof. Alan Turing",
     title: "Data Structures & Algorithmic Complexity",
     category: "Computer Science",
     description: "Benchmark your understanding of Big-O notations, binary search trees, hash table collisions, and graph traversal algorithms.",

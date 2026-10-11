@@ -276,22 +276,44 @@ def submit_quiz_attempt(quiz_id: str, payload: SubmitAnswersSchema):
     passed = 1 if percentage >= quiz_row["passing_score"] else 0
     attempt_id = f"attempt-{int(datetime.datetime.now().timestamp() * 1000)}"
 
-    cursor.execute("""
-        INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, score, total_questions, percentage, passed, cheat_violations)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        attempt_id,
-        quiz_id,
-        quiz_row["join_code"],
-        quiz_row["title"],
-        quiz_row["teacher_name"],
-        payload.studentName,
-        correct_count,
-        total_questions,
-        percentage,
-        passed,
-        payload.cheatViolations
-    ))
+    cursor.execute("PRAGMA table_info(attempts)")
+    attempt_cols = [c[1] for c in cursor.fetchall()]
+
+    if "candidate_name" in attempt_cols:
+        cursor.execute("""
+            INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, candidate_name, score, total_questions, percentage, passed, cheat_violations)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            attempt_id,
+            quiz_id,
+            quiz_row["join_code"],
+            quiz_row["title"],
+            quiz_row["teacher_name"],
+            payload.studentName,
+            payload.studentName,
+            correct_count,
+            total_questions,
+            percentage,
+            passed,
+            payload.cheatViolations
+        ))
+    else:
+        cursor.execute("""
+            INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, score, total_questions, percentage, passed, cheat_violations)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            attempt_id,
+            quiz_id,
+            quiz_row["join_code"],
+            quiz_row["title"],
+            quiz_row["teacher_name"],
+            payload.studentName,
+            correct_count,
+            total_questions,
+            percentage,
+            passed,
+            payload.cheatViolations
+        ))
     conn.commit()
     conn.close()
 

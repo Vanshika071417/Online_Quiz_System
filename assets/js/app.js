@@ -23,6 +23,10 @@ window.switchView = function(viewName) {
   } else if (viewName === "examiner" || viewName === "builder") {
     examinerBtn?.classList.add("active");
     studentBtn?.classList.remove("active");
+    if (viewName === "examiner" && window.examinerStudio) {
+      window.examinerStudio.renderQuizCatalog();
+      window.examinerStudio.loadSubmissionsRoster();
+    }
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -147,15 +151,30 @@ window.saveCloudConfig = function() {
 };
 
 // Join By Code (Mobile & Desktop Web)
-window.joinByCodeWeb = function() {
+window.joinByCodeWeb = async function() {
   const code = (document.getElementById("joinCodeInputWeb")?.value || "").trim().toUpperCase();
   if (!code) {
     window.showToast("Please enter a 6-character Quiz Code (e.g. QZ-1001)", "warning");
     return;
   }
   const quizzes = quizStorage.getQuizzes();
-  const found = quizzes.find(q => (q.joinCode && q.joinCode.toUpperCase() === code) || q.id === code.toLowerCase());
+  let found = quizzes.find(q => (q.joinCode && q.joinCode.toUpperCase() === code) || q.id.toUpperCase() === code);
+
+  if (!found) {
+    try {
+      const res = await fetch(`/api/quizzes/code/${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const remoteQuiz = await res.json();
+        quizStorage.saveQuiz(remoteQuiz);
+        found = remoteQuiz;
+      }
+    } catch (e) {
+      /* network lookup fallback */
+    }
+  }
+
   if (found) {
+    window.showToast(`Found Assessment: "${found.title}"`, "success");
     openStartExamModal(found.id);
   } else {
     window.showToast(`Quiz with code '${code}' not found. Check code with your teacher.`, "danger");

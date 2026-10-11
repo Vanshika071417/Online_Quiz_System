@@ -1,5 +1,5 @@
 // Progressive Web App Service Worker
-const CACHE_NAME = 'quiz-system-cache-v2-cream';
+const CACHE_NAME = 'quiz-system-cache-v3-join-roster';
 const ASSETS = [
   './',
   './index.html',

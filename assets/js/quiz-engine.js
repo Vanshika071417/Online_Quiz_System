@@ -325,7 +325,10 @@ class QuizEngine {
     const attemptRecord = {
       id: "attempt-" + Date.now(),
       quizId: this.currentQuiz.id,
+      joinCode: this.currentQuiz.joinCode || "QZ-1001",
+      teacherName: this.currentQuiz.teacherName || "Prof. Alan Turing",
       quizTitle: this.currentQuiz.title,
+      studentName: this.candidateName,
       candidateName: this.candidateName,
       submittedAt: new Date().toISOString(),
       score: correctCount,
@@ -337,6 +340,20 @@ class QuizEngine {
     };
 
     quizStorage.saveAttempt(attemptRecord);
+
+    // Sync to backend SQLite if server is active
+    fetch(`/api/quizzes/${this.currentQuiz.id}/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        studentName: this.candidateName,
+        answers: this.answers,
+        cheatViolations: this.cheatViolations
+      })
+    }).catch(() => {
+      /* offline / standalone mode fallback */
+    });
+
     this.renderResultScreen(attemptRecord);
     window.switchView("result");
   }

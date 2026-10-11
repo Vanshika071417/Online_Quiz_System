@@ -289,22 +289,44 @@ class DatabaseManager:
     def record_attempt(self, attempt):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, score, total_questions, percentage, passed, cheat_violations)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            attempt["id"],
-            attempt["quizId"],
-            attempt["joinCode"],
-            attempt["quizTitle"],
-            attempt["teacherName"],
-            attempt["studentName"],
-            attempt["score"],
-            attempt["totalQuestions"],
-            attempt["percentage"],
-            1 if attempt["passed"] else 0,
-            attempt["cheatViolations"]
-        ))
+        cursor.execute("PRAGMA table_info(attempts)")
+        cols = [c[1] for c in cursor.fetchall()]
+        st_name = attempt.get("studentName") or attempt.get("candidateName") or "Candidate"
+        if "candidate_name" in cols:
+            cursor.execute("""
+                INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, candidate_name, score, total_questions, percentage, passed, cheat_violations)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                attempt["id"],
+                attempt["quizId"],
+                attempt["joinCode"],
+                attempt["quizTitle"],
+                attempt["teacherName"],
+                st_name,
+                st_name,
+                attempt["score"],
+                attempt["totalQuestions"],
+                attempt["percentage"],
+                1 if attempt["passed"] else 0,
+                attempt["cheatViolations"]
+            ))
+        else:
+            cursor.execute("""
+                INSERT INTO attempts (id, quiz_id, join_code, quiz_title, teacher_name, student_name, score, total_questions, percentage, passed, cheat_violations)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                attempt["id"],
+                attempt["quizId"],
+                attempt["joinCode"],
+                attempt["quizTitle"],
+                attempt["teacherName"],
+                st_name,
+                attempt["score"],
+                attempt["totalQuestions"],
+                attempt["percentage"],
+                1 if attempt["passed"] else 0,
+                attempt["cheatViolations"]
+            ))
         conn.commit()
         conn.close()
 
@@ -1959,46 +1981,183 @@ class OnlineQuizDesktopApp(ctk.CTk):
             command=self.handle_db_backup
         ).pack(side="left")
 
+        # Active Assessments & Student Join Codes Showcase
+        ctk.CTkLabel(
+            scroll,
+            text="Active Tests & Student Join Codes:",
+            font=self.scaled_font(16, weight="bold"),
+            text_color=c["text_primary"]
+        ).pack(anchor="w", pady=(10, 8))
+
+        all_quizzes = self.db.get_all_quizzes()
+        quiz_grid = ctk.CTkFrame(scroll, fg_color="transparent")
+        quiz_grid.pack(fill="x", pady=(0, 20))
+
+        for q in all_quizzes:
+            q_card = ctk.CTkFrame(quiz_grid, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+            q_card.pack(fill="x", pady=4)
+
+            q_row = ctk.CTkFrame(q_card, fg_color="transparent")
+            q_row.pack(fill="x", padx=16, pady=10)
+
+            # Left: Title and metadata
+            q_left = ctk.CTkFrame(q_row, fg_color="transparent")
+            q_left.pack(side="left", fill="both", expand=True)
+
+            ctk.CTkLabel(q_left, text=q["title"], font=self.scaled_font(13, weight="bold"), text_color=c["text_primary"]).pack(anchor="w")
+            ctk.CTkLabel(
+                q_left,
+                text=f"📂 {q.get('category', 'General')}  •  ⏱️ {q.get('durationMinutes', 10)} Mins  •  📝 {len(q.get('questions', []))} Questions  •  🎯 Pass: {q.get('passingScore', 70)}%",
+                font=self.scaled_font(11),
+                text_color=c["text_secondary"]
+            ).pack(anchor="w", pady=(2, 0))
+
+            # Right: Code badge and copy button
+            code_str = q.get("joinCode") or "QZ-1001"
+            q_right = ctk.CTkFrame(q_row, fg_color="transparent")
+            q_right.pack(side="right")
+
+            code_badge = ctk.CTkFrame(q_right, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
+            code_badge.pack(side="left", padx=(0, 10))
+
+            ctk.CTkLabel(
+                code_badge,
+                text=f"🔑 CODE: {code_str}",
+                font=self.scaled_font(12, weight="bold"),
+                text_color=c["accent_primary"],
+                padx=10,
+                pady=4
+            ).pack()
+
+            def make_copy_handler(cd=code_str, ttl=q["title"]):
+                def _cp():
+                    self.clipboard_clear()
+                    self.clipboard_append(cd)
+                    messagebox.showinfo("Join Code Copied", f"Join Code '{cd}' for '{ttl}' copied to clipboard!\n\nStudents can enter this code in the Candidate Arena to join.")
+                return _cp
+
+            ctk.CTkButton(
+                q_right,
+                text="📋 Copy Code",
+                width=90,
+                height=30,
+                font=self.scaled_font(11, weight="bold"),
+                fg_color=c["btn_neutral"],
+                hover_color=c["btn_neutral_hover"],
+                text_color=c["btn_neutral_text"],
+                command=make_copy_handler(code_str, q["title"])
+            ).pack(side="left")
+
         # Class Gradebook & Submissions Table
         ctk.CTkLabel(
             scroll,
-            text="Recent Candidate Submissions & Gradebook:",
+            text="Student Submissions & Class Gradebook Roster:",
             font=self.scaled_font(16, weight="bold"),
             text_color=c["text_primary"]
-        ).pack(anchor="w", pady=(10, 10))
+        ).pack(anchor="w", pady=(15, 6))
+
+        # Filter and Search Bar for Submissions
+        filter_bar = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        filter_bar.pack(fill="x", pady=(0, 10))
+
+        fb_inner = ctk.CTkFrame(filter_bar, fg_color="transparent")
+        fb_inner.pack(fill="x", padx=16, pady=10)
+
+        ctk.CTkLabel(fb_inner, text="Filter by Test:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+
+        quiz_filter_opts = ["All Assessments"] + [f"{q.get('joinCode', 'QZ')}: {q['title']}" for q in all_quizzes]
+        quiz_filter_menu = ctk.CTkOptionMenu(
+            fb_inner,
+            values=quiz_filter_opts,
+            height=32,
+            width=240,
+            font=self.scaled_font(11),
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            button_color=c["card_border"]
+        )
+        quiz_filter_menu.pack(side="left", padx=(0, 20))
+
+        ctk.CTkLabel(fb_inner, text="Search Student:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        search_student_entry = ctk.CTkEntry(
+            fb_inner,
+            placeholder_text="Enter student name...",
+            height=32,
+            width=200,
+            font=self.scaled_font(11),
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"]
+        )
+        search_student_entry.pack(side="left", padx=(0, 12))
 
         table_card = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=12, border_width=c["border_width"], border_color=c["card_border"])
         table_card.pack(fill="x", pady=(0, 20))
 
-        reports = self.db.get_teacher_reports()
-        if not reports:
-            ctk.CTkLabel(table_card, text="No candidate submissions recorded yet.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=30)
-        else:
+        all_reports = self.db.get_teacher_reports()
+
+        def render_roster_rows():
+            for widget in table_card.winfo_children():
+                widget.destroy()
+
+            selected_filter = quiz_filter_menu.get()
+            search_query = search_student_entry.get().strip().lower()
+
+            filtered = all_reports
+            if selected_filter != "All Assessments":
+                code_part = selected_filter.split(":")[0].strip().upper()
+                filtered = [r for r in filtered if r.get("joinCode", "").upper() == code_part or code_part in r.get("quizTitle", "").upper()]
+
+            if search_query:
+                filtered = [r for r in filtered if search_query in r.get("studentName", "").lower()]
+
+            if not filtered:
+                ctk.CTkLabel(table_card, text="No candidate submissions matching current filters.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=30)
+                return
+
             # Table Header
             th_frame = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
             th_frame.pack(fill="x")
 
-            headers = [("Candidate", 180), ("Assessment", 240), ("Score", 90), ("Percent", 90), ("Status", 100), ("Violations", 90), ("Date", 160)]
+            headers = [("Candidate", 160), ("Assessment", 200), ("Code", 90), ("Score", 80), ("Percent", 80), ("Status", 95), ("Violations", 85), ("Date", 140)]
             for h_title, h_width in headers:
                 lbl = ctk.CTkLabel(th_frame, text=h_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=h_width, anchor="w")
-                lbl.pack(side="left", padx=10, pady=8)
+                lbl.pack(side="left", padx=8, pady=8)
 
-            for idx, r in enumerate(reports[:15]):
+            for idx, r in enumerate(filtered[:25]):
                 row_frame = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
                 row_frame.pack(fill="x")
 
                 passed = r["passed"]
                 vals = [
-                    (r["studentName"], 180, c["text_primary"]),
-                    (r["quizTitle"], 240, c["text_cyan"]),
-                    (f"{r['score']} / {r['totalQuestions']}", 90, c["text_primary"]),
-                    (f"{r['percentage']}%", 90, "#10b981" if passed else "#ef4444"),
-                    ("PASSED" if passed else "FAILED", 100, "#10b981" if passed else "#ef4444"),
-                    (str(r["cheatViolations"]), 90, "#f59e0b" if r["cheatViolations"] > 0 else "#64748b"),
-                    (r["submittedAt"][:16] if r["submittedAt"] else "", 160, c["text_secondary"])
+                    (r["studentName"], 160, c["text_primary"]),
+                    (r["quizTitle"], 200, c["text_cyan"]),
+                    (r.get("joinCode", "QZ-1001"), 90, c["accent_primary"]),
+                    (f"{r['score']} / {r['totalQuestions']}", 80, c["text_primary"]),
+                    (f"{r['percentage']}%", 80, "#10b981" if passed else "#ef4444"),
+                    ("PASSED 🏆" if passed else "FAILED", 95, "#10b981" if passed else "#ef4444"),
+                    (str(r["cheatViolations"]), 85, "#f59e0b" if r["cheatViolations"] > 0 else "#64748b"),
+                    (r["submittedAt"][:16] if r["submittedAt"] else "", 140, c["text_secondary"])
                 ]
                 for v_text, v_width, v_color in vals:
-                    ctk.CTkLabel(row_frame, text=v_text, font=self.scaled_font(11), text_color=v_color, width=v_width, anchor="w").pack(side="left", padx=10, pady=7)
+                    ctk.CTkLabel(row_frame, text=v_text, font=self.scaled_font(11), text_color=v_color, width=v_width, anchor="w").pack(side="left", padx=8, pady=7)
+
+        quiz_filter_menu.configure(command=lambda _: render_roster_rows())
+        search_student_entry.bind("<KeyRelease>", lambda _: render_roster_rows())
+
+        ctk.CTkButton(
+            fb_inner,
+            text="🔄 Refresh",
+            width=80,
+            height=32,
+            font=self.scaled_font(11),
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
+            command=render_roster_rows
+        ).pack(side="left")
+
+        render_roster_rows()
 
     def handle_export_csv(self):
         filepath = export_class_reports_to_csv()
@@ -2015,7 +2174,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         c = self.get_theme_colors()
         dialog = ctk.CTkToplevel(self)
         dialog.title("Create New Assessment")
-        dialog.geometry("640x620")
+        dialog.geometry("640x680")
         dialog.transient(self)
         dialog.grab_set()
         dialog.configure(fg_color=c["bg_primary"])
@@ -2029,6 +2188,21 @@ class OnlineQuizDesktopApp(ctk.CTk):
         ctk.CTkLabel(scroll, text="Assessment Title:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(2, 2))
         title_in = ctk.CTkEntry(scroll, placeholder_text="e.g. Distributed Database Architecture", height=36, fg_color=c["bg_card_secondary"], text_color=c["text_primary"], border_color=c["card_border"])
         title_in.pack(fill="x", pady=(0, 8))
+
+        # Join Code row
+        code_row = ctk.CTkFrame(scroll, fg_color="transparent")
+        code_row.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(code_row, text="Student Join Code:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=(0, 10))
+        code_in = ctk.CTkEntry(code_row, width=140, height=36, fg_color=c["bg_card_secondary"], text_color=c["accent_primary"], border_color=c["card_border"], font=self.scaled_font(12, weight="bold"))
+        code_in.insert(0, f"QZ-{random.randint(1000, 9999)}")
+        code_in.pack(side="left", padx=(0, 10))
+
+        def roll_code():
+            code_in.delete(0, "end")
+            code_in.insert(0, f"QZ-{random.randint(1000, 9999)}")
+
+        ctk.CTkButton(code_row, text="🎲 Roll New", width=90, height=32, font=self.scaled_font(11), fg_color=c["btn_neutral"], hover_color=c["btn_neutral_hover"], text_color=c["btn_neutral_text"], command=roll_code).pack(side="left")
 
         # Category
         ctk.CTkLabel(scroll, text="Category:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(2, 2))
@@ -2073,9 +2247,10 @@ class OnlineQuizDesktopApp(ctk.CTk):
             if not title:
                 messagebox.showerror("Error", "Title is required")
                 return
+            join_code = code_in.get().strip().upper() or f"QZ-{random.randint(1000, 9999)}"
             new_quiz = {
                 "id": f"quiz-{int(time.time())}",
-                "joinCode": f"QZ-{random.randint(1000, 9999)}",
+                "joinCode": join_code,
                 "title": title,
                 "category": cat_in.get().strip() or "General",
                 "description": "Standardized academic assessment.",

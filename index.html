@@ -321,6 +321,53 @@
             <!-- Rendered by examiner.js -->
           </div>
         </div>
+
+        <!-- Student Submissions & Class Gradebook Roster -->
+        <div class="card submissions-roster-card">
+          <div class="roster-header-bar">
+            <div>
+              <span class="badge badge-cyan" style="margin-bottom: 0.35rem;">Class Assessment Gradebook</span>
+              <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text-main);">Student Submissions & Roster</h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time list of all students who joined and completed your tests.</p>
+            </div>
+            
+            <div class="roster-filters">
+              <select id="rosterQuizFilter" class="form-select" style="max-width: 220px; font-size: 0.85rem; padding: 0.45rem 0.75rem;" onchange="examinerStudio.filterSubmissions()">
+                <option value="ALL">All Assessments</option>
+              </select>
+
+              <input type="text" id="rosterSearchStudent" class="form-input" placeholder="🔍 Search student name..." style="max-width: 200px; font-size: 0.85rem; padding: 0.45rem 0.75rem;" oninput="examinerStudio.filterSubmissions()">
+
+              <button class="btn btn-secondary btn-sm" onclick="examinerStudio.exportSubmissionsCSV()">
+                📥 Export CSV
+              </button>
+              <button class="btn btn-cyan btn-sm" onclick="examinerStudio.loadSubmissionsRoster()">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Assessment Title</th>
+                  <th>Join Code</th>
+                  <th>Score</th>
+                  <th>Percentage</th>
+                  <th>Status</th>
+                  <th>Violations</th>
+                  <th>Submitted At</th>
+                  <th>Certificate</th>
+                </tr>
+              </thead>
+              <tbody id="studentSubmissionsTableBody">
+                <!-- Populated dynamically by examinerStudio.renderSubmissions() -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -341,10 +388,17 @@
       <!-- Quiz General Settings Panel -->
       <div class="card" style="margin-bottom: 1.5rem;">
         <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-main);">Assessment Details</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div class="form-group">
             <label class="form-label">Quiz Title</label>
             <input type="text" id="builderQuizTitle" class="form-input" placeholder="e.g. Algorithms & Complexity">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Student Join Code</label>
+            <div style="display: flex; gap: 0.4rem;">
+              <input type="text" id="builderJoinCode" class="form-input" placeholder="e.g. QZ-1001" style="font-weight: 700; text-transform: uppercase;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="examinerStudio.generateNewJoinCode()" title="Generate Random Code">🎲 New</button>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Category</label>
@@ -583,11 +637,11 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="./assets/js/quiz-data.js"></script>
-  <script src="./assets/js/firebase-config.js"></script>
-  <script src="./assets/js/quiz-engine.js"></script>
-  <script src="./assets/js/examiner.js"></script>
-  <script src="./assets/js/certificates.js"></script>
-  <script src="./assets/js/app.js"></script>
+  <script src="./assets/js/quiz-data.js?v=3.1"></script>
+  <script src="./assets/js/firebase-config.js?v=3.1"></script>
+  <script src="./assets/js/quiz-engine.js?v=3.1"></script>
+  <script src="./assets/js/examiner.js?v=3.1"></script>
+  <script src="./assets/js/certificates.js?v=3.1"></script>
+  <script src="./assets/js/app.js?v=3.1"></script>
 </body>
 </html>
