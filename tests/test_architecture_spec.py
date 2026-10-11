@@ -117,15 +117,18 @@ def test_02_quiz_authoring_and_immutable_versioning():
     assert publish_v2_res.json()["version_number"] == 2
     assert publish_v2_res.json()["questions_count"] == 3
 
+import uuid
+
 def test_03_attempt_lifecycle_and_answer_key_sanitization():
     # Login as learner
     stu_login = client.post("/v1/auth/login", json={"username": "student", "password": "student123"})
     stu_token = stu_login.json()["access_token"]
 
+    test_key = f"key-test-{uuid.uuid4().hex[:8]}"
     # Start attempt on baseline quiz
     start_res = client.post(
         "/v1/quizzes/qz-baseline-1001/attempts",
-        json={"idempotency_key": "key-test-1001"},
+        json={"idempotency_key": test_key},
         headers={"Authorization": f"Bearer {stu_token}"}
     )
     assert start_res.status_code == 200

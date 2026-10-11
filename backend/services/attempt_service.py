@@ -36,6 +36,12 @@ class AttemptService:
         if not quiz or not quiz.current_version_id:
             raise HTTPException(status_code=404, detail="Quiz not found or not published")
 
+        # Idempotent Check: if request with idempotency_key already committed, return it directly
+        if idempotency_key:
+            existing_by_key = db.query(Attempt).filter(Attempt.idempotency_key == idempotency_key).first()
+            if existing_by_key:
+                return AttemptService._build_learner_form_response(db, existing_by_key)
+
         # Idempotent Resume: return active in_progress attempt if exists
         existing_attempt = db.query(Attempt).filter(
             Attempt.quiz_id == quiz.id,
