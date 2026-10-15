@@ -385,12 +385,67 @@ class DatabaseManager:
             "activeStudents": active_students
         }
 
+    def authenticate_user(self, username, password):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (username.strip(),))
+        row = cursor.fetchone()
+        conn.close()
+        if not row:
+            return None
+        if row["password"] == password.strip():
+            keys = row.keys()
+            return {
+                "id": row["id"],
+                "username": row["username"],
+                "role": row["role"],
+                "full_name": row["full_name"],
+                "department": row["department"] if "department" in keys else "General"
+            }
+        return None
+
+    def register_user(self, username, password, role, full_name, department="General"):
+        username = username.strip()
+        password = password.strip()
+        full_name = full_name.strip()
+        department = department.strip() or "General"
+        if not username or not password or not full_name:
+            return False, "Username, password, and full name are required."
+        if len(username) < 3:
+            return False, "Username must be at least 3 characters."
+        if len(password) < 4:
+            return False, "Password must be at least 4 characters."
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,))
+        if cursor.fetchone():
+            conn.close()
+            return False, f"Username '{username}' already exists. Please choose a different username."
+
+        user_id = f"usr-{int(time.time())}-{random.randint(100, 999)}"
+        cursor.execute("""
+            INSERT INTO users (id, username, password, role, full_name, department)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (user_id, username, password, role, full_name, department))
+        conn.commit()
+        conn.close()
+
+        return True, {
+            "id": user_id,
+            "username": username,
+            "role": role,
+            "full_name": full_name,
+            "department": department
+        }
+
 
 class OnlineQuizDesktopApp(ctk.CTk):
     """
     Native Desktop GUI mirroring the QuizSphere Pro Web Architecture.
     Features:
-    - Sleek Top Navbar with Role Switcher & Accessibility Toolbar
+    - Dedicated Sign In & Registration Portal with instant 1-Click Demo Accounts
+    - Role-aware Top Navbar (Candidate Arena for Students, Examiner Studio for Faculty/Admin)
     - Candidate Arena Catalog with real-time search & fast Quiz Code joiner
     - Readiness Check Modal with security briefing & custom candidate names
     - Live Exam Arena with timer urgency, code blocks, option cards & palette matrix
@@ -410,7 +465,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.high_contrast = False
         self.font_scale = 1.0  # 0.85 to 1.45
         self.minimalist_focus_mode = False
-        self.current_nav_view = "candidate-arena"  # candidate-arena, examiner-studio, exam-arena, result-scorecard
+        self.current_nav_view = "login"  # login, candidate-arena, examiner-studio, exam-arena, result-scorecard
 
         c = self.get_theme_colors()
         self.configure(fg_color=c["bg_primary"])
@@ -418,8 +473,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.db = DatabaseManager()
 
         # Session & Authentication State
-        self.current_role = "student"  # "student" or "examiner"
-        self.student_name = "Alex Mercer"
+        self.logged_in_user = None  # User dict when authenticated
+        self.current_role = None    # "student", "faculty", "admin"
+        self.student_name = "Candidate"
         self.teacher_name = "Prof. Alan Turing"
 
         # Exam Session Variables
@@ -447,8 +503,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.setup_top_nav()
         self.setup_workspace()
 
-        # Launch directly into Candidate Arena (matching the website!)
-        self.switch_nav_view("candidate-arena")
+        # Initial Session State & Launch into Login View
+        self.update_nav_session_state()
+        self.switch_nav_view("login")
 
     # =========================================================================
     # ACCESSIBILITY & SCALING HELPERS
@@ -610,6 +667,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             )
         if hasattr(self, "user_chip_btn"):
             self.user_chip_btn.configure(fg_color=c["badge_cyan_bg"], text_color=c["badge_cyan_text"])
+        if hasattr(self, "logout_btn"):
+            self.logout_btn.configure(fg_color="#ef4444", text_color="#ffffff", hover_color="#dc2626")
 
     def adjust_font_scale(self, delta):
         new_scale = round(self.font_scale + delta, 2)
@@ -632,7 +691,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.render_exam_arena()
 
     def refresh_current_view(self):
-        if self.current_nav_view == "candidate-arena":
+        if self.current_nav_view == "login":
+            self.render_login_view()
+        elif self.current_nav_view == "candidate-arena":
             self.render_candidate_arena()
         elif self.current_nav_view == "examiner-studio":
             self.render_examiner_studio()
@@ -817,18 +878,31 @@ class OnlineQuizDesktopApp(ctk.CTk):
         )
         self.focus_btn.pack(side="left", padx=3)
 
-        # Candidate Name Pill
+        # Candidate / User Name Pill
         self.user_chip_btn = ctk.CTkButton(
             controls_frame,
-            text=f"👤 {self.student_name}",
+            text="🔒 Sign In",
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["badge_cyan_bg"],
             text_color=c["badge_cyan_text"],
-            hover_color=c["badge_cyan_bg"],
-            command=self.prompt_change_candidate_name
+            hover_color=c["bg_card_hover"],
+            command=self.handle_user_chip_click
         )
         self.user_chip_btn.pack(side="left", padx=(6, 0))
+
+        # Sign Out Button
+        self.logout_btn = ctk.CTkButton(
+            controls_frame,
+            text="🚪 Sign Out",
+            height=34,
+            width=84,
+            font=self.scaled_font(11, weight="bold"),
+            fg_color="#ef4444",
+            text_color="#ffffff",
+            hover_color="#dc2626",
+            command=self.handle_logout
+        )
 
     def setup_workspace(self):
         c = self.get_theme_colors()
@@ -839,10 +913,155 @@ class OnlineQuizDesktopApp(ctk.CTk):
         for w in self.workspace.winfo_children():
             w.destroy()
 
+    def update_nav_session_state(self):
+        c = self.get_theme_colors()
+        if not self.logged_in_user:
+            # When logged out, hide the tab switcher
+            if hasattr(self, "nav_tabs_frame"):
+                self.nav_tabs_frame.pack_forget()
+            if hasattr(self, "user_chip_btn"):
+                self.user_chip_btn.configure(
+                    text="🔒 Sign In",
+                    fg_color=c["badge_cyan_bg"],
+                    text_color=c["badge_cyan_text"]
+                )
+            if hasattr(self, "logout_btn"):
+                self.logout_btn.pack_forget()
+        else:
+            # When logged in, restore tab switcher
+            if hasattr(self, "nav_tabs_frame"):
+                self.nav_tabs_frame.pack(side="left", padx=20, pady=12)
+            role = self.logged_in_user.get("role", "student").lower()
+            name = self.logged_in_user.get("full_name", "User")
+
+            if hasattr(self, "user_chip_btn"):
+                self.user_chip_btn.configure(
+                    text=f"👤 {name} ({role.title()})",
+                    fg_color=c["badge_cyan_bg"],
+                    text_color=c["badge_cyan_text"]
+                )
+
+            # Restrict Examiner Studio for Student accounts
+            if hasattr(self, "tab_candidate_btn") and hasattr(self, "tab_examiner_btn"):
+                self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
+                self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
+                if role == "student":
+                    self.tab_examiner_btn.configure(
+                        command=lambda: messagebox.showinfo(
+                            "Permission Required",
+                            "Examiner Studio requires Faculty or Administrator credentials.\n\nPlease sign in with an Examiner account to build tests and inspect gradebooks."
+                        )
+                    )
+                else:
+                    self.tab_examiner_btn.configure(command=lambda: self.switch_nav_view("examiner-studio"))
+
+            if hasattr(self, "logout_btn"):
+                self.logout_btn.pack(side="left", padx=(6, 0))
+
+    def handle_user_chip_click(self):
+        if not self.logged_in_user:
+            self.switch_nav_view("login")
+        else:
+            self.show_user_profile_modal()
+
+    def handle_login_success(self, user):
+        self.logged_in_user = user
+        self.current_role = user.get("role", "student")
+        full_name = user.get("full_name", "Candidate")
+
+        if self.current_role == "student":
+            self.student_name = full_name
+            target_view = "candidate-arena"
+        else:
+            self.teacher_name = full_name
+            self.student_name = full_name
+            target_view = "examiner-studio"
+
+        self.update_nav_session_state()
+        self.switch_nav_view(target_view)
+
+    def handle_logout(self):
+        if messagebox.askyesno("Sign Out", "Are you sure you want to sign out of QuizSphere Pro?"):
+            self.logged_in_user = None
+            self.current_role = None
+            self.update_nav_session_state()
+            self.switch_nav_view("login")
+
+    def show_user_profile_modal(self):
+        if not self.logged_in_user:
+            return
+        c = self.get_theme_colors()
+        modal = ctk.CTkToplevel(self)
+        modal.title("User Profile")
+        modal.geometry("480x420")
+        modal.transient(self)
+        modal.grab_set()
+        modal.configure(fg_color=c["bg_primary"])
+
+        content = ctk.CTkFrame(modal, fg_color=c["bg_card"], corner_radius=16, border_width=c["border_width"], border_color=c["card_border"])
+        content.pack(fill="both", expand=True, padx=25, pady=25)
+
+        ctk.CTkLabel(content, text="👤 User Profile & Credentials", font=self.scaled_font(18, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", padx=20, pady=(20, 15))
+
+        details = [
+            ("Full Name:", self.logged_in_user.get("full_name", "")),
+            ("Username:", self.logged_in_user.get("username", "")),
+            ("Role:", self.logged_in_user.get("role", "").upper()),
+            ("Department / Class:", self.logged_in_user.get("department", "General")),
+            ("User ID:", self.logged_in_user.get("id", ""))
+        ]
+
+        for label, val in details:
+            row = ctk.CTkFrame(content, fg_color="transparent")
+            row.pack(fill="x", padx=20, pady=4)
+            ctk.CTkLabel(row, text=label, font=self.scaled_font(12, weight="bold"), text_color=c["text_secondary"], width=130, anchor="w").pack(side="left")
+            ctk.CTkLabel(row, text=val, font=self.scaled_font(12), text_color=c["text_primary"], anchor="w").pack(side="left")
+
+        btn_row = ctk.CTkFrame(content, fg_color="transparent")
+        btn_row.pack(fill="x", padx=20, pady=(25, 10))
+
+        def on_signout_click():
+            modal.destroy()
+            self.handle_logout()
+
+        ctk.CTkButton(
+            btn_row,
+            text="🚪 Sign Out",
+            fg_color="#ef4444",
+            hover_color="#dc2626",
+            text_color="#ffffff",
+            font=self.scaled_font(12, weight="bold"),
+            command=on_signout_click
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            btn_row,
+            text="Close",
+            fg_color=c["btn_neutral"],
+            hover_color=c["btn_neutral_hover"],
+            text_color=c["btn_neutral_text"],
+            font=self.scaled_font(12),
+            command=modal.destroy
+        ).pack(side="right")
+
     def switch_nav_view(self, view_name):
-        self.current_nav_view = view_name
         c = self.get_theme_colors()
         active_color = c["accent_primary"]
+
+        if view_name == "login":
+            self.current_nav_view = "login"
+            self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
+            self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
+            self.render_login_view()
+            return
+
+        # If not logged in, force login screen
+        if not self.logged_in_user:
+            self.current_nav_view = "login"
+            self.render_login_view()
+            return
+
+        self.current_nav_view = view_name
 
         # Update top tab buttons
         if view_name == "candidate-arena":
@@ -862,12 +1081,327 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"])
             self.render_result_scorecard()
 
-    def prompt_change_candidate_name(self):
-        dialog = ctk.CTkInputDialog(text="Enter Candidate Name for Certificates & Submissions:", title="Candidate Profile")
-        name = dialog.get_input()
-        if name and name.strip():
-            self.student_name = name.strip()
-            self.user_chip_btn.configure(text=f"👤 {self.student_name}")
+    # =========================================================================
+    # VIEW 0: LOGIN & REGISTRATION PORTAL
+    # =========================================================================
+    def render_login_view(self):
+        self.clear_workspace()
+        c = self.get_theme_colors()
+
+        scroll = ctk.CTkScrollableFrame(self.workspace, fg_color="transparent", corner_radius=0)
+        scroll.pack(fill="both", expand=True, padx=20, pady=(20, 20))
+
+        # Centered container
+        center_box = ctk.CTkFrame(scroll, fg_color="transparent")
+        center_box.pack(expand=True, pady=10)
+
+        # Login Card
+        card = ctk.CTkFrame(
+            center_box,
+            width=540,
+            fg_color=c["bg_card"],
+            corner_radius=16,
+            border_width=c["border_width"],
+            border_color=c["card_border"]
+        )
+        card.pack(padx=20, pady=10)
+
+        inner = ctk.CTkFrame(card, fg_color="transparent")
+        inner.pack(fill="both", expand=True, padx=36, pady=32)
+
+        # Top Badge & Logo
+        brand_row = ctk.CTkFrame(inner, fg_color="transparent")
+        brand_row.pack(anchor="center", pady=(0, 6))
+
+        ctk.CTkLabel(brand_row, text="⚡", font=self.scaled_font(26)).pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(
+            brand_row,
+            text="QuizSphere",
+            font=self.scaled_font(22, weight="bold"),
+            text_color=c["text_primary"]
+        ).pack(side="left")
+        ctk.CTkLabel(
+            brand_row,
+            text="Pro 2.0",
+            font=self.scaled_font(10, weight="bold"),
+            text_color=c["badge_cyan_text"],
+            fg_color=c["badge_cyan_bg"],
+            corner_radius=6,
+            padx=7,
+            pady=2
+        ).pack(side="left", padx=(8, 0))
+
+        ctk.CTkLabel(
+            inner,
+            text="Assessment Portal Sign In",
+            font=self.scaled_font(18, weight="bold"),
+            text_color=c["text_primary"]
+        ).pack(anchor="center", pady=(4, 2))
+
+        ctk.CTkLabel(
+            inner,
+            text="Secure sign in for students, examiners, and evaluators.",
+            font=self.scaled_font(12),
+            text_color=c["text_secondary"]
+        ).pack(anchor="center", pady=(0, 16))
+
+        # Tab Segment Switcher: Sign In vs Register
+        tab_switcher = ctk.CTkSegmentedButton(
+            inner,
+            values=["🔑 Sign In", "✨ Create Account"],
+            font=self.scaled_font(12, weight="bold"),
+            height=36,
+            selected_color=c["accent_primary"],
+            selected_hover_color="#3730a3",
+            unselected_color=c["bg_card_secondary"],
+            unselected_hover_color=c["bg_card_hover"],
+            text_color=c["text_primary"]
+        )
+        tab_switcher.set("🔑 Sign In")
+        tab_switcher.pack(fill="x", pady=(0, 20))
+
+        # Dynamic Form Container
+        form_frame = ctk.CTkFrame(inner, fg_color="transparent")
+        form_frame.pack(fill="x")
+
+        def render_form_content(mode):
+            for widget in form_frame.winfo_children():
+                widget.destroy()
+
+            if mode == "🔑 Sign In":
+                # --- SIGN IN MODE ---
+                ctk.CTkLabel(form_frame, text="Username / Student ID:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                user_entry = ctk.CTkEntry(
+                    form_frame,
+                    placeholder_text="e.g. student or faculty",
+                    height=38,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                user_entry.pack(fill="x", pady=(0, 10))
+
+                ctk.CTkLabel(form_frame, text="Password:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                pass_box = ctk.CTkFrame(form_frame, fg_color="transparent")
+                pass_box.pack(fill="x", pady=(0, 4))
+
+                pass_entry = ctk.CTkEntry(
+                    pass_box,
+                    placeholder_text="••••••••",
+                    show="*",
+                    height=38,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                pass_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+                show_btn = ctk.CTkButton(
+                    pass_box,
+                    text="👁️",
+                    width=42,
+                    height=38,
+                    font=self.scaled_font(13),
+                    fg_color=c["btn_neutral"],
+                    text_color=c["btn_neutral_text"],
+                    hover_color=c["btn_neutral_hover"]
+                )
+                show_btn.pack(side="right")
+
+                def toggle_pass_visibility():
+                    if pass_entry.cget("show") == "*":
+                        pass_entry.configure(show="")
+                        show_btn.configure(text="🙈")
+                    else:
+                        pass_entry.configure(show="*")
+                        show_btn.configure(text="👁️")
+
+                show_btn.configure(command=toggle_pass_visibility)
+
+                status_lbl = ctk.CTkLabel(form_frame, text="", font=self.scaled_font(11, weight="bold"), text_color="#ef4444")
+                status_lbl.pack(anchor="w", pady=(2, 6))
+
+                def do_login(custom_user=None, custom_pwd=None):
+                    u = custom_user if custom_user is not None else user_entry.get().strip()
+                    p = custom_pwd if custom_pwd is not None else pass_entry.get().strip()
+                    if not u or not p:
+                        status_lbl.configure(text="⚠️ Please enter both username and password.", text_color="#ef4444")
+                        return
+                    user = self.db.authenticate_user(u, p)
+                    if not user:
+                        status_lbl.configure(text="❌ Invalid credentials. Check your username and password.", text_color="#ef4444")
+                        return
+                    self.handle_login_success(user)
+
+                user_entry.bind("<Return>", lambda _: do_login())
+                pass_entry.bind("<Return>", lambda _: do_login())
+
+                ctk.CTkButton(
+                    form_frame,
+                    text="Sign In 🚀",
+                    font=self.scaled_font(13, weight="bold"),
+                    fg_color=c["btn_cyan"],
+                    hover_color="#0369a1",
+                    text_color=c["btn_cyan_text"],
+                    height=42,
+                    command=do_login
+                ).pack(fill="x", pady=(8, 16))
+
+                # Quick Access Demo Logins
+                demo_box = ctk.CTkFrame(form_frame, fg_color=c["bg_card_secondary"], corner_radius=10, border_width=1, border_color=c["card_border"])
+                demo_box.pack(fill="x", pady=(4, 0))
+
+                ctk.CTkLabel(
+                    demo_box,
+                    text="⚡ One-Click Demo Logins:",
+                    font=self.scaled_font(11, weight="bold"),
+                    text_color=c["text_secondary"]
+                ).pack(anchor="w", padx=12, pady=(10, 6))
+
+                pills_row = ctk.CTkFrame(demo_box, fg_color="transparent")
+                pills_row.pack(fill="x", padx=12, pady=(0, 10))
+
+                def set_and_login(u, p):
+                    user_entry.delete(0, "end")
+                    user_entry.insert(0, u)
+                    pass_entry.delete(0, "end")
+                    pass_entry.insert(0, p)
+                    do_login(u, p)
+
+                ctk.CTkButton(
+                    pills_row,
+                    text="🎓 Student",
+                    height=32,
+                    font=self.scaled_font(11, weight="bold"),
+                    fg_color=c["btn_neutral"],
+                    text_color=c["btn_neutral_text"],
+                    hover_color=c["btn_neutral_hover"],
+                    command=lambda: set_and_login("student", "student123")
+                ).pack(side="left", padx=(0, 6), fill="x", expand=True)
+
+                ctk.CTkButton(
+                    pills_row,
+                    text="🛠️ Faculty",
+                    height=32,
+                    font=self.scaled_font(11, weight="bold"),
+                    fg_color=c["btn_neutral"],
+                    text_color=c["btn_neutral_text"],
+                    hover_color=c["btn_neutral_hover"],
+                    command=lambda: set_and_login("faculty", "faculty123")
+                ).pack(side="left", padx=(0, 6), fill="x", expand=True)
+
+                ctk.CTkButton(
+                    pills_row,
+                    text="🛡️ Admin",
+                    height=32,
+                    font=self.scaled_font(11, weight="bold"),
+                    fg_color=c["btn_neutral"],
+                    text_color=c["btn_neutral_text"],
+                    hover_color=c["btn_neutral_hover"],
+                    command=lambda: set_and_login("admin", "admin123")
+                ).pack(side="left", fill="x", expand=True)
+
+            else:
+                # --- CREATE ACCOUNT MODE ---
+                ctk.CTkLabel(form_frame, text="Full Name:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                name_reg = ctk.CTkEntry(
+                    form_frame,
+                    placeholder_text="e.g. Eleanor Vance",
+                    height=36,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                name_reg.pack(fill="x", pady=(0, 8))
+
+                ctk.CTkLabel(form_frame, text="Username:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                uname_reg = ctk.CTkEntry(
+                    form_frame,
+                    placeholder_text="e.g. evance2026",
+                    height=36,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                uname_reg.pack(fill="x", pady=(0, 8))
+
+                ctk.CTkLabel(form_frame, text="Password:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                pwd_reg = ctk.CTkEntry(
+                    form_frame,
+                    placeholder_text="Minimum 4 characters",
+                    show="*",
+                    height=36,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                pwd_reg.pack(fill="x", pady=(0, 8))
+
+                # Role Selection
+                role_row = ctk.CTkFrame(form_frame, fg_color="transparent")
+                role_row.pack(fill="x", pady=(0, 8))
+
+                ctk.CTkLabel(role_row, text="Role:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(side="left", padx=(0, 10))
+                role_menu = ctk.CTkOptionMenu(
+                    role_row,
+                    values=["🎓 Student / Candidate", "🛠️ Faculty / Examiner"],
+                    height=34,
+                    font=self.scaled_font(11),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    button_color=c["card_border"]
+                )
+                role_menu.pack(side="left", fill="x", expand=True)
+
+                ctk.CTkLabel(form_frame, text="Department / Cohort:", font=self.scaled_font(12, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(0, 3))
+                dept_reg = ctk.CTkEntry(
+                    form_frame,
+                    placeholder_text="e.g. Computer Science & Engineering",
+                    height=36,
+                    font=self.scaled_font(12),
+                    fg_color=c["bg_card_secondary"],
+                    text_color=c["text_primary"],
+                    border_color=c["card_border"]
+                )
+                dept_reg.insert(0, "Computer Science & Engineering")
+                dept_reg.pack(fill="x", pady=(0, 6))
+
+                reg_status_lbl = ctk.CTkLabel(form_frame, text="", font=self.scaled_font(11, weight="bold"), text_color="#ef4444")
+                reg_status_lbl.pack(anchor="w", pady=(2, 6))
+
+                def do_register():
+                    fn = name_reg.get().strip()
+                    un = uname_reg.get().strip()
+                    pw = pwd_reg.get().strip()
+                    dp = dept_reg.get().strip() or "General"
+                    rl = "faculty" if "Faculty" in role_menu.get() else "student"
+
+                    ok, res = self.db.register_user(un, pw, rl, fn, dp)
+                    if not ok:
+                        reg_status_lbl.configure(text=f"❌ {res}", text_color="#ef4444")
+                        return
+
+                    messagebox.showinfo("Account Created", f"Account '{un}' registered successfully as {rl.title()}!\nSigning you in...")
+                    self.handle_login_success(res)
+
+                ctk.CTkButton(
+                    form_frame,
+                    text="Create Account & Sign In 🎉",
+                    font=self.scaled_font(13, weight="bold"),
+                    fg_color="#10b981",
+                    hover_color="#059669",
+                    text_color="#ffffff",
+                    height=42,
+                    command=do_register
+                ).pack(fill="x", pady=(8, 10))
+
+        tab_switcher.configure(command=render_form_content)
+        render_form_content("🔑 Sign In")
 
     # =========================================================================
     # VIEW 1: CANDIDATE ARENA (Student Catalog & Quick Join)
