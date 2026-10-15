@@ -941,18 +941,21 @@ class OnlineQuizDesktopApp(ctk.CTk):
                     text_color=c["badge_cyan_text"]
                 )
 
-            # Restrict Examiner Studio for Student accounts
+            # Role-tailored Navigation tabs:
+            # - Student: Only Candidate Arena is shown (Examiner Studio is removed)
+            # - Faculty/Teacher/Examiner: Only Examiner Studio is shown (Candidate Arena is removed)
+            # - Admin: Both tabs are available
             if hasattr(self, "tab_candidate_btn") and hasattr(self, "tab_examiner_btn"):
-                self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
-                self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
                 if role == "student":
-                    self.tab_examiner_btn.configure(
-                        command=lambda: messagebox.showinfo(
-                            "Permission Required",
-                            "Examiner Studio requires Faculty or Administrator credentials.\n\nPlease sign in with an Examiner account to build tests and inspect gradebooks."
-                        )
-                    )
+                    self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
+                    self.tab_examiner_btn.pack_forget()
+                elif role in ["faculty", "examiner", "teacher"]:
+                    self.tab_candidate_btn.pack_forget()
+                    self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
+                    self.tab_examiner_btn.configure(command=lambda: self.switch_nav_view("examiner-studio"))
                 else:
+                    self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
+                    self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
                     self.tab_examiner_btn.configure(command=lambda: self.switch_nav_view("examiner-studio"))
 
             if hasattr(self, "logout_btn"):
@@ -1060,6 +1063,13 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.current_nav_view = "login"
             self.render_login_view()
             return
+
+        # Enforce role boundaries
+        role = (self.logged_in_user.get("role") or "student").lower()
+        if role == "student" and view_name == "examiner-studio":
+            view_name = "candidate-arena"
+        elif role in ["faculty", "examiner", "teacher"] and view_name in ["candidate-arena", "exam-arena"]:
+            view_name = "examiner-studio"
 
         self.current_nav_view = view_name
 

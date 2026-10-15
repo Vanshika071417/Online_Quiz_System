@@ -68,3 +68,35 @@ def test_database_user_registration():
     )
     assert ok_short is False
     assert "at least 4 characters" in err_short
+
+def test_role_based_navigation_tabs():
+    from desktop_app import OnlineQuizDesktopApp
+    app = OnlineQuizDesktopApp()
+    app.withdraw()
+
+    try:
+        # 1. Student login: Candidate Arena visible, Examiner Studio completely removed
+        app.handle_login_success({"role": "student", "full_name": "Alex Mercer"})
+        assert app.tab_candidate_btn.winfo_manager() == "pack"
+        assert app.tab_examiner_btn.winfo_manager() == ""
+
+        # Attempt to navigate to examiner studio should be blocked
+        app.switch_nav_view("examiner-studio")
+        assert app.current_nav_view == "candidate-arena"
+
+        # 2. Faculty login: Candidate Arena completely removed, Examiner Studio visible
+        app.handle_login_success({"role": "faculty", "full_name": "Prof. Alan Turing"})
+        assert app.tab_candidate_btn.winfo_manager() == ""
+        assert app.tab_examiner_btn.winfo_manager() == "pack"
+
+        # Attempt to navigate to candidate arena should stay in examiner studio
+        app.switch_nav_view("candidate-arena")
+        assert app.current_nav_view == "examiner-studio"
+
+        # 3. Admin login: Both tabs visible
+        app.handle_login_success({"role": "admin", "full_name": "Admin User"})
+        assert app.tab_candidate_btn.winfo_manager() == "pack"
+        assert app.tab_examiner_btn.winfo_manager() == "pack"
+
+    finally:
+        app.destroy()
