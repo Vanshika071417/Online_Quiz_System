@@ -223,12 +223,14 @@
       const navRoleSwitcher = document.getElementById("navRoleSwitcher");
       const tabBtnStudent = document.getElementById("tabBtnStudent");
       const tabBtnExaminer = document.getElementById("tabBtnExaminer");
+      const tabBtnAdmin = document.getElementById("tabBtnAdmin");
       const navUserChip = document.getElementById("navUserChip");
       const navLogoutBtn = document.getElementById("navLogoutBtn");
 
       if (!this.currentUser) {
         // Logged Out State
         if (navRoleSwitcher) navRoleSwitcher.style.display = "none";
+        if (tabBtnAdmin) tabBtnAdmin.style.display = "none";
         if (navLogoutBtn) navLogoutBtn.style.display = "none";
         if (navUserChip) {
           navUserChip.innerHTML = "<span>🔒</span> <span class='tab-text'>Sign In</span>";
@@ -251,18 +253,21 @@
         }
 
         // Role-tailored Navigation Tabs:
-        // - Student: Show ONLY Candidate Arena; remove Examiner Studio completely
-        // - Faculty / Examiner: Show ONLY Examiner Studio; remove Candidate Arena completely
-        // - Admin: Show BOTH Candidate Arena and Examiner Studio
+        // - Student: Show ONLY Candidate Arena; remove Examiner Studio and Admin Panel
+        // - Faculty / Examiner: Show ONLY Examiner Studio; remove Candidate Arena and Admin Panel
+        // - Admin: Show Candidate Arena, Examiner Studio, AND Admin Panel
         if (role === "student" || role === "learner") {
           if (tabBtnStudent) tabBtnStudent.style.display = "inline-flex";
           if (tabBtnExaminer) tabBtnExaminer.style.display = "none";
+          if (tabBtnAdmin) tabBtnAdmin.style.display = "none";
         } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
           if (tabBtnStudent) tabBtnStudent.style.display = "none";
           if (tabBtnExaminer) tabBtnExaminer.style.display = "inline-flex";
+          if (tabBtnAdmin) tabBtnAdmin.style.display = "none";
         } else { // Admin
           if (tabBtnStudent) tabBtnStudent.style.display = "inline-flex";
           if (tabBtnExaminer) tabBtnExaminer.style.display = "inline-flex";
+          if (tabBtnAdmin) tabBtnAdmin.style.display = "inline-flex";
         }
 
         // Pre-fill candidate name across the app

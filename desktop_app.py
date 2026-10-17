@@ -439,6 +439,202 @@ class DatabaseManager:
             "department": department
         }
 
+    def get_admin_users_with_stats(self):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username, role, full_name, department, created_at FROM users ORDER BY created_at ASC")
+        users_rows = cursor.fetchall()
+        result = []
+        for idx, u in enumerate(users_rows, start=1):
+            keys = u.keys()
+            uname = u["username"].strip()
+            fname = u["full_name"].strip()
+            cursor.execute("""
+                SELECT COUNT(*), SUM(passed), AVG(percentage), MAX(percentage), SUM(cheat_violations)
+                FROM attempts
+                WHERE LOWER(student_name) = LOWER(?) OR LOWER(student_name) = LOWER(?)
+            """, (fname, uname))
+            stat_row = cursor.fetchone()
+            attempts_count = stat_row[0] or 0
+            passed_count = stat_row[1] or 0
+            avg_score = round(stat_row[2]) if stat_row[2] is not None else 0
+            highest_score = stat_row[3] or 0
+            violations = stat_row[4] or 0
+            pass_rate = round((passed_count / attempts_count) * 100) if attempts_count > 0 else 0
+
+            result.append({
+                "user_no": idx,
+                "id": u["id"],
+                "username": u["username"],
+                "full_name": u["full_name"],
+                "role": u["role"].lower(),
+                "department": u["department"] if "department" in keys and u["department"] else "General",
+                "created_at": u["created_at"] if "created_at" in keys else "",
+                "total_attempts": attempts_count,
+                "passed_attempts": passed_count,
+                "failed_attempts": max(0, attempts_count - passed_count),
+                "pass_rate": pass_rate,
+                "avg_score": avg_score,
+                "highest_score": highest_score,
+                "total_violations": violations
+            })
+        conn.close()
+        return result
+
+    def get_admin_user_report(self, user_id):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            conn.close()
+            return None
+
+        uname = user_row["username"].strip()
+        fname = user_row["full_name"].strip()
+        cursor.execute("""
+            SELECT * FROM attempts
+            WHERE LOWER(student_name) = LOWER(?) OR LOWER(student_name) = LOWER(?)
+            ORDER BY submitted_at DESC
+        """, (fname, uname))
+        attempts_rows = cursor.fetchall()
+        attempts = []
+        total_passed = 0
+        total_violations = 0
+        percentages = []
+
+        for r in attempts_rows:
+            keys = r.keys()
+            pct = r["percentage"]
+            percentages.append(pct)
+            passed = bool(r["passed"])
+            if passed:
+                total_passed += 1
+            violations = r["cheat_violations"] if "cheat_violations" in keys else 0
+            total_violations += violations
+            attempts.append({
+                "id": r["id"],
+                "quiz_title": r["quiz_title"],
+                "join_code": r["join_code"] if "join_code" in keys else "QZ-1001",
+                "teacher_name": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
+                "score": r["score"],
+                "total_questions": r["total_questions"],
+                "percentage": pct,
+                "passed": passed,
+                "cheat_violations": violations,
+                "submitted_at": r["submitted_at"]
+            })
+        conn.close()
+
+        total = len(attempts)
+        avg = round(sum(percentages) / total) if total > 0 else 0
+        highest = max(percentages) if percentages else 0
+        lowest = min(percentages) if percentages else 0
+        pass_rate = round((total_passed / total) * 100) if total > 0 else 0
+
+        keys = user_row.keys()
+        return {
+            "user": {
+                "id": user_row["id"],
+                "username": user_row["username"],
+                "full_name": user_row["full_name"],
+                "role": user_row["role"].lower(),
+                "department": user_row["department"] if "department" in keys and user_row["department"] else "General",
+                "created_at": user_row["created_at"] if "created_at" in keys else ""
+            },
+            "summary": {
+                "total_attempts": total,
+                "passed_attempts": total_passed,
+                "failed_attempts": max(0, total - total_passed),
+                "pass_rate": pass_rate,
+                "avg_score": avg,
+                "highest_score": highest,
+                "lowest_score": lowest,
+                "total_violations": total_violations
+            },
+            "attempts": attempts
+        }
+
+    def get_admin_quiz_analytics(self):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        # KPIs
+        cursor.execute("SELECT COUNT(*), SUM(CASE WHEN LOWER(role) = 'student' THEN 1 ELSE 0 END), SUM(CASE WHEN LOWER(role) = 'faculty' THEN 1 ELSE 0 END) FROM users")
+        u_counts = cursor.fetchone()
+        total_users = u_counts[0] or 0
+        total_students = u_counts[1] or 0
+        total_faculty = u_counts[2] or 0
+
+        cursor.execute("SELECT COUNT(*), SUM(passed), AVG(percentage), SUM(cheat_violations) FROM attempts")
+        a_counts = cursor.fetchone()
+        total_attempts = a_counts[0] or 0
+        total_passed = a_counts[1] or 0
+        overall_pass_rate = round((total_passed / total_attempts) * 100) if total_attempts > 0 else 0
+        platform_avg = round(a_counts[2]) if a_counts[2] is not None else 0
+        total_violations = a_counts[3] or 0
+
+        cursor.execute("SELECT id, title, category, join_code, teacher_name, duration_minutes, passing_score FROM quizzes ORDER BY created_at DESC")
+        q_rows = cursor.fetchall()
+        quizzes = []
+        for q in q_rows:
+            qid = q["id"]
+            cursor.execute("""
+                SELECT COUNT(*), SUM(passed), AVG(percentage), MAX(percentage), MIN(percentage), SUM(cheat_violations)
+                FROM attempts
+                WHERE quiz_id = ?
+            """, (qid,))
+            qs = cursor.fetchone()
+            count = qs[0] or 0
+            passed = qs[1] or 0
+            pass_rate = round((passed / count) * 100) if count > 0 else 0
+            avg = round(qs[2]) if qs[2] is not None else 0
+            high = qs[3] or 0
+            low = qs[4] or 0
+            viols = qs[5] or 0
+
+            diff = "Balanced (Standard)"
+            if count == 0:
+                diff = "Balanced (Standard)"
+            elif pass_rate >= 80:
+                diff = "Beginner (High Pass)"
+            elif pass_rate >= 50:
+                diff = "Balanced (Standard)"
+            else:
+                diff = "Rigorous (Challenging)"
+
+            quizzes.append({
+                "id": q["id"],
+                "title": q["title"],
+                "category": q["category"],
+                "join_code": q["join_code"],
+                "teacher_name": q["teacher_name"],
+                "duration_minutes": q["duration_minutes"],
+                "passing_score": q["passing_score"],
+                "attempts_count": count,
+                "pass_rate": pass_rate,
+                "avg_score": avg,
+                "highest_score": high,
+                "lowest_score": low,
+                "total_violations": viols,
+                "difficulty": diff
+            })
+        conn.close()
+
+        return {
+            "kpis": {
+                "total_users": total_users,
+                "total_students": total_students,
+                "total_faculty": total_faculty,
+                "total_quizzes": len(q_rows),
+                "total_attempts": total_attempts,
+                "pass_rate": overall_pass_rate,
+                "platform_avg": platform_avg,
+                "total_violations": total_violations
+            },
+            "quizzes": quizzes
+        }
+
 
 class OnlineQuizDesktopApp(ctk.CTk):
     """
@@ -477,6 +673,12 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.current_role = None    # "student", "faculty", "admin"
         self.student_name = "Candidate"
         self.teacher_name = "Prof. Alan Turing"
+        self.admin_sub_view = "users"
+        self.admin_user_filter_role = "all"
+        self.admin_user_search_q = ""
+        self.admin_quiz_search_q = ""
+        self.admin_sub_search_q = ""
+        self.admin_sub_filter_res = "all"
 
         # Exam Session Variables
         self.active_quiz = None
@@ -660,12 +862,23 @@ class OnlineQuizDesktopApp(ctk.CTk):
             if self.current_nav_view in ["candidate-arena", "exam-arena", "result-scorecard"]:
                 self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
                 self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+                if hasattr(self, "tab_admin_btn"):
+                    self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             elif self.current_nav_view == "examiner-studio":
                 self.tab_examiner_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
                 self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+                if hasattr(self, "tab_admin_btn"):
+                    self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            elif self.current_nav_view == "admin-panel":
+                if hasattr(self, "tab_admin_btn"):
+                    self.tab_admin_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
+                self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+                self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             else:
                 self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
                 self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+                if hasattr(self, "tab_admin_btn"):
+                    self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
         if hasattr(self, "theme_btn"):
             self.theme_btn.configure(
                 text="☀️ Light" if self.current_theme == "light" else "🌙 Dark",
@@ -726,6 +939,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             self.render_exam_arena()
         elif self.current_nav_view == "result-scorecard":
             self.render_result_scorecard()
+        elif self.current_nav_view == "admin-panel":
+            self.render_admin_panel()
 
     # =========================================================================
     # KEYBOARD NAVIGATION & SHORTCUTS
@@ -833,6 +1048,18 @@ class OnlineQuizDesktopApp(ctk.CTk):
             command=lambda: self.switch_nav_view("examiner-studio")
         )
         self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
+
+        self.tab_admin_btn = ctk.CTkButton(
+            self.nav_tabs_frame,
+            text="🛡️ Admin Panel",
+            font=self.scaled_font(12, weight="bold"),
+            fg_color="transparent",
+            hover_color=c["bg_card_hover"],
+            text_color=c["text_secondary"],
+            corner_radius=6,
+            height=34,
+            command=lambda: self.switch_nav_view("admin-panel")
+        )
 
         # Right Controls: Accessibility, Theme & Session
         controls_frame = ctk.CTkFrame(self.nav_header, fg_color="transparent")
@@ -974,14 +1201,20 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 if role == "student":
                     self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
                     self.tab_examiner_btn.pack_forget()
+                    if hasattr(self, "tab_admin_btn"):
+                        self.tab_admin_btn.pack_forget()
                 elif role in ["faculty", "examiner", "teacher"]:
                     self.tab_candidate_btn.pack_forget()
                     self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
                     self.tab_examiner_btn.configure(command=lambda: self.switch_nav_view("examiner-studio"))
+                    if hasattr(self, "tab_admin_btn"):
+                        self.tab_admin_btn.pack_forget()
                 else:
                     self.tab_candidate_btn.pack(side="left", padx=3, pady=3)
                     self.tab_examiner_btn.pack(side="left", padx=3, pady=3)
                     self.tab_examiner_btn.configure(command=lambda: self.switch_nav_view("examiner-studio"))
+                    if hasattr(self, "tab_admin_btn"):
+                        self.tab_admin_btn.pack(side="left", padx=3, pady=3)
 
             if hasattr(self, "logout_btn"):
                 self.logout_btn.pack(side="left", padx=(6, 0))
@@ -1000,6 +1233,10 @@ class OnlineQuizDesktopApp(ctk.CTk):
         if self.current_role == "student":
             self.student_name = full_name
             target_view = "candidate-arena"
+        elif self.current_role == "admin":
+            self.teacher_name = full_name
+            self.student_name = full_name
+            target_view = "admin-panel"
         else:
             self.teacher_name = full_name
             self.student_name = full_name
@@ -1091,9 +1328,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         # Enforce role boundaries
         role = (self.logged_in_user.get("role") or "student").lower()
-        if role == "student" and view_name == "examiner-studio":
+        if role == "student" and view_name in ["examiner-studio", "admin-panel"]:
             view_name = "candidate-arena"
-        elif role in ["faculty", "examiner", "teacher"] and view_name in ["candidate-arena", "exam-arena"]:
+        elif role in ["faculty", "examiner", "teacher"] and view_name in ["candidate-arena", "exam-arena", "admin-panel"]:
             view_name = "examiner-studio"
 
         self.current_nav_view = view_name
@@ -1102,18 +1339,32 @@ class OnlineQuizDesktopApp(ctk.CTk):
         if view_name == "candidate-arena":
             self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            if hasattr(self, "tab_admin_btn"):
+                self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             self.render_candidate_arena()
         elif view_name == "examiner-studio":
             self.tab_examiner_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
             self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            if hasattr(self, "tab_admin_btn"):
+                self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             self.render_examiner_studio()
+        elif view_name == "admin-panel":
+            if hasattr(self, "tab_admin_btn"):
+                self.tab_admin_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
+            self.tab_candidate_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            self.render_admin_panel()
         elif view_name == "exam-arena":
             self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            if hasattr(self, "tab_admin_btn"):
+                self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             self.render_exam_arena()
         elif view_name == "result-scorecard":
             self.tab_candidate_btn.configure(fg_color=active_color, text_color="#ffffff", hover_color=c["accent_hover"])
             self.tab_examiner_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
+            if hasattr(self, "tab_admin_btn"):
+                self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
             self.render_result_scorecard()
 
     # =========================================================================
@@ -2727,6 +2978,669 @@ class OnlineQuizDesktopApp(ctk.CTk):
         ).pack(side="left")
 
         render_roster_rows()
+
+    # =========================================================================
+    # VIEW 6: ENTERPRISE ADMIN PANEL (User Governance, Analytics & Reports)
+    # =========================================================================
+    def render_admin_panel(self):
+        self.clear_workspace()
+        c = self.get_theme_colors()
+
+        scroll = ctk.CTkScrollableFrame(self.workspace, fg_color="transparent", corner_radius=0)
+        scroll.pack(fill="both", expand=True, padx=30, pady=(15, 25))
+
+        # Admin Header
+        header_row = ctk.CTkFrame(scroll, fg_color="transparent")
+        header_row.pack(fill="x", pady=(5, 15))
+
+        left_hero = ctk.CTkFrame(header_row, fg_color="transparent")
+        left_hero.pack(side="left", fill="y", anchor="w")
+
+        badge = ctk.CTkLabel(
+            left_hero,
+            text="🔒 ENTERPRISE GOVERNANCE & TELEMETRY",
+            font=self.scaled_font(10, weight="bold"),
+            fg_color=c["badge_cyan_bg"],
+            text_color=c["badge_cyan_text"],
+            corner_radius=4,
+            padx=8,
+            pady=3
+        )
+        badge.pack(anchor="w", pady=(0, 4))
+
+        ctk.CTkLabel(
+            left_hero,
+            text="Platform Administration Console",
+            font=self.scaled_font(24, weight="bold"),
+            text_color=c["text_primary"]
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            left_hero,
+            text="User governance, candidate assessment performance reports, and diagnostic quiz analytics.",
+            font=self.scaled_font(12),
+            text_color=c["text_secondary"]
+        ).pack(anchor="w")
+
+        right_actions = ctk.CTkFrame(header_row, fg_color="transparent")
+        right_actions.pack(side="right", anchor="e")
+
+        ctk.CTkButton(
+            right_actions,
+            text="📥 Export Roster CSV",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
+            height=34,
+            command=self.export_admin_users_csv
+        ).pack(side="left", padx=4)
+
+        ctk.CTkButton(
+            right_actions,
+            text="📥 Export Submissions CSV",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
+            height=34,
+            command=self.export_admin_submissions_csv
+        ).pack(side="left", padx=4)
+
+        ctk.CTkButton(
+            right_actions,
+            text="🔄 Refresh",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color=c["accent_primary"],
+            text_color="#ffffff",
+            hover_color=c["accent_hover"],
+            height=34,
+            width=80,
+            command=self.render_admin_panel
+        ).pack(side="left", padx=4)
+
+        # Sub-Navigation Tabs Row
+        subnav_card = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        subnav_card.pack(fill="x", pady=(0, 15))
+
+        subnav_inner = ctk.CTkFrame(subnav_card, fg_color="transparent")
+        subnav_inner.pack(fill="x", padx=10, pady=8)
+
+        def switch_sub(sub_id):
+            self.admin_sub_view = sub_id
+            self.render_admin_panel()
+
+        tabs = [
+            ("users", "👥 Candidate & User Governance"),
+            ("quizzes", "📊 Quiz Performance Telemetry"),
+            ("submissions", "📑 Global Submissions Audit Log")
+        ]
+
+        for tab_id, tab_label in tabs:
+            is_active = (self.admin_sub_view == tab_id)
+            btn = ctk.CTkButton(
+                subnav_inner,
+                text=tab_label,
+                font=self.scaled_font(12, weight="bold" if is_active else "normal"),
+                fg_color=c["accent_primary"] if is_active else "transparent",
+                text_color="#ffffff" if is_active else c["text_secondary"],
+                hover_color=c["accent_hover"] if is_active else c["bg_card_hover"],
+                height=34,
+                corner_radius=8,
+                command=lambda tid=tab_id: switch_sub(tid)
+            )
+            btn.pack(side="left", padx=4)
+
+        # Sub-view container
+        content_box = ctk.CTkFrame(scroll, fg_color="transparent")
+        content_box.pack(fill="both", expand=True)
+
+        if self.admin_sub_view == "quizzes":
+            self._render_admin_quizzes_view(content_box, c)
+        elif self.admin_sub_view == "submissions":
+            self._render_admin_submissions_view(content_box, c)
+        else:
+            self._render_admin_users_view(content_box, c)
+
+    def _render_admin_users_view(self, container, c):
+        users = self.db.get_admin_users_with_stats()
+
+        # Top KPI Cards
+        total_users = len(users)
+        total_students = sum(1 for u in users if u["role"] == "student")
+        total_faculty = sum(1 for u in users if u["role"] in ["faculty", "teacher", "examiner"])
+        total_violations = sum(u["total_violations"] for u in users)
+
+        kpis_row = ctk.CTkFrame(container, fg_color="transparent")
+        kpis_row.pack(fill="x", pady=(0, 15))
+
+        kpi_defs = [
+            ("TOTAL REGISTERED ACCOUNTS", str(total_users), "Students, Faculty & Admins", c["text_cyan"]),
+            ("ENROLLED CANDIDATES", str(total_students), "Active quiz takers", "#10b981"),
+            ("FACULTY & EXAMINERS", str(total_faculty), "Assessment creators", "#8b5cf6"),
+            ("PROCTOR VIOLATIONS", str(total_violations), "Tab switches & alerts", "#f59e0b" if total_violations > 0 else c["text_secondary"])
+        ]
+
+        for title, val, sub, val_col in kpi_defs:
+            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+            card.pack(side="left", fill="both", expand=True, padx=4)
+            inner = ctk.CTkFrame(card, fg_color="transparent")
+            inner.pack(fill="both", expand=True, padx=14, pady=12)
+            ctk.CTkLabel(inner, text=title, font=self.scaled_font(9, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
+            ctk.CTkLabel(inner, text=val, font=self.scaled_font(22, weight="bold"), text_color=val_col).pack(anchor="w", pady=(2, 0))
+            ctk.CTkLabel(inner, text=sub, font=self.scaled_font(10), text_color=c["text_dim"]).pack(anchor="w")
+
+        # Filters Card
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 15))
+        filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
+        filter_inner.pack(fill="x", padx=14, pady=10)
+
+        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        search_entry = ctk.CTkEntry(
+            filter_inner,
+            width=220,
+            height=32,
+            placeholder_text="Search name, username, dept...",
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"],
+            font=self.scaled_font(11)
+        )
+        if self.admin_user_search_q:
+            search_entry.insert(0, self.admin_user_search_q)
+        search_entry.pack(side="left", padx=(0, 15))
+
+        ctk.CTkLabel(filter_inner, text="Role:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        role_options = ["All Roles", "Student", "Faculty", "Admin"]
+        role_menu = ctk.CTkOptionMenu(
+            filter_inner,
+            values=role_options,
+            width=130,
+            height=32,
+            fg_color=c["bg_card_secondary"],
+            button_color=c["btn_neutral"],
+            button_hover_color=c["btn_neutral_hover"],
+            text_color=c["text_primary"],
+            font=self.scaled_font(11)
+        )
+        if self.admin_user_filter_role in role_options:
+            role_menu.set(self.admin_user_filter_role)
+        else:
+            role_menu.set("All Roles")
+        role_menu.pack(side="left", padx=(0, 15))
+
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge.pack(side="right")
+
+        # Table Card
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card.pack(fill="both", expand=True)
+
+        def render_table():
+            for w in table_card.winfo_children():
+                w.destroy()
+
+            q = search_entry.get().strip().lower()
+            self.admin_user_search_q = q
+            sel_role = role_menu.get().strip().lower()
+            self.admin_user_filter_role = role_menu.get().strip()
+
+            filtered = users
+            if sel_role != "all roles":
+                filtered = [u for u in filtered if u["role"] == sel_role]
+            if q:
+                filtered = [u for u in filtered if q in u["full_name"].lower() or q in u["username"].lower() or q in u["department"].lower() or q in u["id"].lower()]
+
+            count_badge.configure(text=f"Showing {len(filtered)} of {len(users)} users")
+
+            if not filtered:
+                ctk.CTkLabel(table_card, text="No users matching current filters.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
+                return
+
+            # Table Header
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th.pack(fill="x")
+
+            cols = [
+                ("#", 45),
+                ("User ID", 110),
+                ("Candidate / User Name", 170),
+                ("Role", 85),
+                ("Department", 120),
+                ("Quizzes Taken", 95),
+                ("Avg Score", 85),
+                ("Pass Rate", 85),
+                ("Violations", 80),
+                ("Action", 110)
+            ]
+            for col_title, w_val in cols:
+                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+
+            for idx, u in enumerate(filtered):
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                row.pack(fill="x")
+
+                role_str = u["role"].upper()
+                role_col = "#38bdf8" if role_str == "STUDENT" else ("#a855f7" if role_str in ["FACULTY", "TEACHER", "EXAMINER"] else "#f59e0b")
+
+                ctk.CTkLabel(row, text=f"#{u['user_no']}", font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=45, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=u["id"], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=6, pady=6)
+                
+                name_frame = ctk.CTkFrame(row, fg_color="transparent", width=170)
+                name_frame.pack(side="left", padx=6, pady=4)
+                name_frame.pack_propagate(False)
+                ctk.CTkLabel(name_frame, text=u["full_name"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], anchor="w").pack(fill="x")
+                ctk.CTkLabel(name_frame, text=f"@{u['username']}", font=self.scaled_font(10), text_color=c["text_secondary"], anchor="w").pack(fill="x")
+
+                ctk.CTkLabel(row, text=role_str, font=self.scaled_font(10, weight="bold"), text_color=role_col, width=85, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=u["department"], font=self.scaled_font(11), text_color=c["text_secondary"], width=120, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=f"{u['total_attempts']} quiz(zes)", font=self.scaled_font(11), text_color=c["text_primary"], width=95, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=f"{u['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
+                
+                pr_col = "#10b981" if u["pass_rate"] >= 50 else ("#ef4444" if u["total_attempts"] > 0 else c["text_dim"])
+                ctk.CTkLabel(row, text=f"{u['pass_rate']}%" if u["total_attempts"] > 0 else "-", font=self.scaled_font(11, weight="bold"), text_color=pr_col, width=85, anchor="w").pack(side="left", padx=6, pady=6)
+
+                viol_col = "#ef4444" if u["total_violations"] > 0 else c["text_dim"]
+                ctk.CTkLabel(row, text=str(u["total_violations"]), font=self.scaled_font(11), text_color=viol_col, width=80, anchor="w").pack(side="left", padx=6, pady=6)
+
+                btn_box = ctk.CTkFrame(row, fg_color="transparent", width=110)
+                btn_box.pack(side="left", padx=6, pady=4)
+                ctk.CTkButton(
+                    btn_box,
+                    text="📄 Report",
+                    font=self.scaled_font(10, weight="bold"),
+                    fg_color=c["badge_cyan_bg"],
+                    text_color=c["badge_cyan_text"],
+                    hover_color=c["bg_card_hover"],
+                    height=26,
+                    width=85,
+                    command=lambda uid=u["id"]: self.show_admin_user_report_modal(uid)
+                ).pack(side="left")
+
+        search_entry.bind("<KeyRelease>", lambda _: render_table())
+        role_menu.configure(command=lambda _: render_table())
+        render_table()
+
+    def _render_admin_quizzes_view(self, container, c):
+        analytics = self.db.get_admin_quiz_analytics()
+        kpis = analytics.get("kpis", {})
+        quizzes = analytics.get("quizzes", [])
+
+        # Top KPI Cards
+        kpis_row = ctk.CTkFrame(container, fg_color="transparent")
+        kpis_row.pack(fill="x", pady=(0, 15))
+
+        kpi_defs = [
+            ("PUBLISHED ASSESSMENTS", str(kpis.get("total_quizzes", len(quizzes))), "Available on platform", c["text_cyan"]),
+            ("TOTAL QUIZ ATTEMPTS", str(kpis.get("total_attempts", 0)), "Submissions processed", "#38bdf8"),
+            ("SYSTEM PASS RATE", f"{kpis.get('pass_rate', 0)}%", "Overall candidate success", "#10b981"),
+            ("AVERAGE ACCURACY", f"{kpis.get('platform_avg', 0)}%", "Across all quizzes", "#8b5cf6")
+        ]
+
+        for title, val, sub, val_col in kpi_defs:
+            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+            card.pack(side="left", fill="both", expand=True, padx=4)
+            inner = ctk.CTkFrame(card, fg_color="transparent")
+            inner.pack(fill="both", expand=True, padx=14, pady=12)
+            ctk.CTkLabel(inner, text=title, font=self.scaled_font(9, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
+            ctk.CTkLabel(inner, text=val, font=self.scaled_font(22, weight="bold"), text_color=val_col).pack(anchor="w", pady=(2, 0))
+            ctk.CTkLabel(inner, text=sub, font=self.scaled_font(10), text_color=c["text_dim"]).pack(anchor="w")
+
+        # Filters Card
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 15))
+        filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
+        filter_inner.pack(fill="x", padx=14, pady=10)
+
+        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        search_entry = ctk.CTkEntry(
+            filter_inner,
+            width=260,
+            height=32,
+            placeholder_text="Filter assessment title, join code, creator...",
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"],
+            font=self.scaled_font(11)
+        )
+        if self.admin_quiz_search_q:
+            search_entry.insert(0, self.admin_quiz_search_q)
+        search_entry.pack(side="left", padx=(0, 15))
+
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge.pack(side="right")
+
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card.pack(fill="both", expand=True)
+
+        def render_table():
+            for w in table_card.winfo_children():
+                w.destroy()
+
+            q = search_entry.get().strip().lower()
+            self.admin_quiz_search_q = q
+
+            filtered = quizzes
+            if q:
+                filtered = [qz for qz in filtered if q in qz["title"].lower() or q in qz.get("join_code", "").lower() or q in qz.get("teacher_name", "").lower() or q in qz.get("category", "").lower()]
+
+            count_badge.configure(text=f"Showing {len(filtered)} of {len(quizzes)} assessments")
+
+            if not filtered:
+                ctk.CTkLabel(table_card, text="No assessments found matching search.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
+                return
+
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th.pack(fill="x")
+
+            cols = [
+                ("Join Code", 95),
+                ("Assessment Title", 220),
+                ("Examiner / Creator", 150),
+                ("Attempts", 85),
+                ("Avg Score", 85),
+                ("Pass Rate", 85),
+                ("Score Range", 95),
+                ("Difficulty Diagnosis", 140),
+                ("Violations", 80)
+            ]
+            for col_title, w_val in cols:
+                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+
+            for idx, qz in enumerate(filtered):
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                row.pack(fill="x")
+
+                ctk.CTkLabel(row, text=qz.get("join_code", "QZ-1001"), font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=95, anchor="w").pack(side="left", padx=6, pady=7)
+                
+                title_frame = ctk.CTkFrame(row, fg_color="transparent", width=220)
+                title_frame.pack(side="left", padx=6, pady=4)
+                title_frame.pack_propagate(False)
+                ctk.CTkLabel(title_frame, text=qz["title"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], anchor="w").pack(fill="x")
+                ctk.CTkLabel(title_frame, text=f"{qz.get('category', 'Computer Science')} • {qz.get('duration_minutes', 15)}m", font=self.scaled_font(10), text_color=c["text_dim"], anchor="w").pack(fill="x")
+
+                ctk.CTkLabel(row, text=qz.get("teacher_name", "Faculty"), font=self.scaled_font(11), text_color=c["text_secondary"], width=150, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=str(qz["attempts_count"]), font=self.scaled_font(11), text_color=c["text_primary"], width=85, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=f"{qz['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], width=85, anchor="w").pack(side="left", padx=6, pady=7)
+
+                pr_col = "#10b981" if qz["pass_rate"] >= 50 else ("#ef4444" if qz["attempts_count"] > 0 else c["text_dim"])
+                ctk.CTkLabel(row, text=f"{qz['pass_rate']}%" if qz["attempts_count"] > 0 else "-", font=self.scaled_font(11, weight="bold"), text_color=pr_col, width=85, anchor="w").pack(side="left", padx=6, pady=7)
+
+                range_str = f"{qz['lowest_score']}% - {qz['highest_score']}%" if qz["attempts_count"] > 0 else "N/A"
+                ctk.CTkLabel(row, text=range_str, font=self.scaled_font(10), text_color=c["text_secondary"], width=95, anchor="w").pack(side="left", padx=6, pady=7)
+
+                diff_str = qz.get("difficulty", "Balanced")
+                diff_col = "#10b981" if "Beginner" in diff_str else ("#f59e0b" if "Rigorous" in diff_str else "#38bdf8")
+                ctk.CTkLabel(row, text=diff_str, font=self.scaled_font(10, weight="bold"), text_color=diff_col, width=140, anchor="w").pack(side="left", padx=6, pady=7)
+
+                viol_col = "#ef4444" if qz["total_violations"] > 0 else c["text_dim"]
+                ctk.CTkLabel(row, text=str(qz["total_violations"]), font=self.scaled_font(11), text_color=viol_col, width=80, anchor="w").pack(side="left", padx=6, pady=7)
+
+        search_entry.bind("<KeyRelease>", lambda _: render_table())
+        render_table()
+
+    def _render_admin_submissions_view(self, container, c):
+        all_reports = self.db.get_teacher_reports()
+
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 15))
+        filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
+        filter_inner.pack(fill="x", padx=14, pady=10)
+
+        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        search_entry = ctk.CTkEntry(
+            filter_inner,
+            width=240,
+            height=32,
+            placeholder_text="Search candidate, assessment title...",
+            fg_color=c["bg_card_secondary"],
+            text_color=c["text_primary"],
+            border_color=c["card_border"],
+            font=self.scaled_font(11)
+        )
+        if self.admin_sub_search_q:
+            search_entry.insert(0, self.admin_sub_search_q)
+        search_entry.pack(side="left", padx=(0, 15))
+
+        ctk.CTkLabel(filter_inner, text="Result:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        res_menu = ctk.CTkOptionMenu(
+            filter_inner,
+            values=["All Submissions", "Passed", "Failed"],
+            width=140,
+            height=32,
+            fg_color=c["bg_card_secondary"],
+            button_color=c["btn_neutral"],
+            button_hover_color=c["btn_neutral_hover"],
+            text_color=c["text_primary"],
+            font=self.scaled_font(11)
+        )
+        res_menu.set("All Submissions")
+        res_menu.pack(side="left", padx=(0, 15))
+
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge.pack(side="right")
+
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card.pack(fill="both", expand=True)
+
+        def render_table():
+            for w in table_card.winfo_children():
+                w.destroy()
+
+            q = search_entry.get().strip().lower()
+            self.admin_sub_search_q = q
+            sel_res = res_menu.get().strip().lower()
+
+            filtered = all_reports
+            if sel_res == "passed":
+                filtered = [r for r in filtered if r["passed"]]
+            elif sel_res == "failed":
+                filtered = [r for r in filtered if not r["passed"]]
+
+            if q:
+                filtered = [r for r in filtered if q in r.get("studentName", "").lower() or q in r.get("quizTitle", "").lower() or q in r.get("joinCode", "").lower()]
+
+            count_badge.configure(text=f"Showing {len(filtered)} of {len(all_reports)} records")
+
+            if not filtered:
+                ctk.CTkLabel(table_card, text="No candidate submissions found.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
+                return
+
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th.pack(fill="x")
+
+            cols = [
+                ("Attempt ID", 110),
+                ("Candidate Name", 160),
+                ("Assessment Title", 200),
+                ("Join Code", 85),
+                ("Score", 80),
+                ("Percent", 80),
+                ("Status", 95),
+                ("Violations", 85),
+                ("Submitted At", 140)
+            ]
+            for col_title, w_val in cols:
+                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+
+            for idx, r in enumerate(filtered[:50]):
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                row.pack(fill="x")
+
+                passed = r["passed"]
+                ctk.CTkLabel(row, text=r["id"][:12], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=r["studentName"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], width=160, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=r["quizTitle"], font=self.scaled_font(11), text_color=c["text_cyan"], width=200, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=r.get("joinCode", "QZ-1001"), font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=f"{r['score']}/{r['totalQuestions']}", font=self.scaled_font(11), text_color=c["text_primary"], width=80, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=f"{r['percentage']}%", font=self.scaled_font(11, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=80, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text="PASSED 🏆" if passed else "FAILED", font=self.scaled_font(11, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=95, anchor="w").pack(side="left", padx=6, pady=6)
+
+                viol = r["cheatViolations"]
+                ctk.CTkLabel(row, text=str(viol), font=self.scaled_font(11), text_color="#ef4444" if viol > 0 else c["text_dim"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=(r["submittedAt"] or "")[:16], font=self.scaled_font(10), text_color=c["text_secondary"], width=140, anchor="w").pack(side="left", padx=6, pady=6)
+
+        search_entry.bind("<KeyRelease>", lambda _: render_table())
+        res_menu.configure(command=lambda _: render_table())
+        render_table()
+
+    def show_admin_user_report_modal(self, user_id):
+        report = self.db.get_admin_user_report(user_id)
+        if not report:
+            messagebox.showerror("Error", f"No candidate report found for user ID: {user_id}")
+            return
+
+        c = self.get_theme_colors()
+        u = report["user"]
+        s = report["summary"]
+        attempts = report["attempts"]
+
+        modal = ctk.CTkToplevel(self)
+        modal.title(f"Performance Scorecard — {u['full_name']}")
+        modal.geometry("740x660")
+        modal.transient(self)
+        modal.grab_set()
+        modal.configure(fg_color=c["bg_primary"])
+
+        scroll = ctk.CTkScrollableFrame(modal, fg_color=c["bg_card"], corner_radius=14, border_width=c["border_width"], border_color=c["card_border"])
+        scroll.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Header Profile
+        h_box = ctk.CTkFrame(scroll, fg_color="transparent")
+        h_box.pack(fill="x", pady=(0, 15))
+
+        ctk.CTkLabel(h_box, text=f"👤 {u['full_name']}", font=self.scaled_font(20, weight="bold"), text_color=c["text_primary"]).pack(anchor="w")
+        ctk.CTkLabel(h_box, text=f"@{u['username']} • Role: {u['role'].upper()} • Dept: {u['department']} • ID: {u['id']}", font=self.scaled_font(11), text_color=c["text_secondary"]).pack(anchor="w", pady=(2, 0))
+
+        # Metrics Summary Cards
+        summary_grid = ctk.CTkFrame(scroll, fg_color="transparent")
+        summary_grid.pack(fill="x", pady=(0, 15))
+
+        m_cards = [
+            ("TOTAL QUIZZES", str(s["total_attempts"]), "Completed attempts", c["text_cyan"]),
+            ("AVERAGE ACCURACY", f"{s['avg_score']}%", "Mean platform score", "#8b5cf6"),
+            ("PASS RATE", f"{s['pass_rate']}%", f"{s['passed_attempts']} passed, {s['failed_attempts']} failed", "#10b981"),
+            ("SCORE RANGE", f"{s['lowest_score']}% - {s['highest_score']}%", "Min to Max achieved", c["accent_primary"]),
+            ("PROCTOR ALERTS", str(s["total_violations"]), "Tab switch flags", "#ef4444" if s["total_violations"] > 0 else c["text_secondary"])
+        ]
+
+        for m_title, m_val, m_sub, m_col in m_cards:
+            cd = ctk.CTkFrame(summary_grid, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
+            cd.pack(side="left", fill="both", expand=True, padx=3)
+            cin = ctk.CTkFrame(cd, fg_color="transparent")
+            cin.pack(fill="both", expand=True, padx=10, pady=8)
+            ctk.CTkLabel(cin, text=m_title, font=self.scaled_font(8, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
+            ctk.CTkLabel(cin, text=m_val, font=self.scaled_font(16, weight="bold"), text_color=m_col).pack(anchor="w")
+            ctk.CTkLabel(cin, text=m_sub, font=self.scaled_font(9), text_color=c["text_dim"]).pack(anchor="w")
+
+        # Past Attempts Section
+        ctk.CTkLabel(scroll, text="📋 Assessment Attempt History", font=self.scaled_font(13, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(10, 8))
+
+        if not attempts:
+            ctk.CTkLabel(scroll, text="No completed assessments recorded yet for this candidate.", font=self.scaled_font(12), text_color=c["text_secondary"]).pack(pady=30)
+        else:
+            tbl = ctk.CTkFrame(scroll, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
+            tbl.pack(fill="x", pady=(0, 15))
+
+            th = ctk.CTkFrame(tbl, fg_color=c["table_header_bg"], corner_radius=0)
+            th.pack(fill="x")
+
+            col_defs = [
+                ("Date", 110),
+                ("Assessment Title", 190),
+                ("Join Code", 85),
+                ("Score", 75),
+                ("Percent", 75),
+                ("Result", 85),
+                ("Violations", 75)
+            ]
+            for col_name, col_w in col_defs:
+                ctk.CTkLabel(th, text=col_name, font=self.scaled_font(10, weight="bold"), text_color=c["text_secondary"], width=col_w, anchor="w").pack(side="left", padx=5, pady=6)
+
+            for idx, att in enumerate(attempts):
+                r_frame = ctk.CTkFrame(tbl, fg_color=c["bg_card_secondary"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                r_frame.pack(fill="x")
+
+                passed = att["passed"]
+                ctk.CTkLabel(r_frame, text=(att["submitted_at"] or "")[:10], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=att["quiz_title"], font=self.scaled_font(10, weight="bold"), text_color=c["text_primary"], width=190, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=att.get("join_code", "QZ-1001"), font=self.scaled_font(10, weight="bold"), text_color=c["accent_primary"], width=85, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=f"{att['score']}/{att['total_questions']}", font=self.scaled_font(10), text_color=c["text_primary"], width=75, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=f"{att['percentage']}%", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=75, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text="PASS 🏆" if passed else "FAIL", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=85, anchor="w").pack(side="left", padx=5, pady=6)
+                
+                viol_c = "#ef4444" if att["cheat_violations"] > 0 else c["text_dim"]
+                ctk.CTkLabel(r_frame, text=str(att["cheat_violations"]), font=self.scaled_font(10), text_color=viol_c, width=75, anchor="w").pack(side="left", padx=5, pady=6)
+
+        ctk.CTkButton(
+            scroll,
+            text="Close Report",
+            font=self.scaled_font(11, weight="bold"),
+            fg_color=c["btn_neutral"],
+            text_color=c["btn_neutral_text"],
+            hover_color=c["btn_neutral_hover"],
+            height=32,
+            width=100,
+            command=modal.destroy
+        ).pack(anchor="e", pady=(10, 0))
+
+    def export_admin_users_csv(self):
+        import csv
+        users = self.db.get_admin_users_with_stats()
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"users_governance_{ts}.csv"
+        filepath = os.path.join(REPORTS_DIR, filename)
+
+        with open(filepath, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["No", "User ID", "Username", "Full Name", "Role", "Department", "Created At", "Total Quizzes", "Passed", "Failed", "Pass Rate (%)", "Average Score (%)", "Highest Score (%)", "Violations"])
+            for u in users:
+                writer.writerow([
+                    u["user_no"],
+                    u["id"],
+                    u["username"],
+                    u["full_name"],
+                    u["role"],
+                    u["department"],
+                    u["created_at"],
+                    u["total_attempts"],
+                    u["passed_attempts"],
+                    u["failed_attempts"],
+                    u["pass_rate"],
+                    u["avg_score"],
+                    u["highest_score"],
+                    u["total_violations"]
+                ])
+        messagebox.showinfo("Export Successful", f"Authoritative Users Governance CSV exported to:\n\n{filepath}")
+
+    def export_admin_submissions_csv(self):
+        import csv
+        all_reports = self.db.get_teacher_reports()
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"global_submissions_{ts}.csv"
+        filepath = os.path.join(REPORTS_DIR, filename)
+
+        with open(filepath, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Attempt ID", "Join Code", "Assessment Title", "Examiner", "Candidate Name", "Score", "Total Questions", "Percentage", "Passed", "Cheat Violations", "Submitted At"])
+            for r in all_reports:
+                writer.writerow([
+                    r["id"],
+                    r.get("joinCode", ""),
+                    r.get("quizTitle", ""),
+                    r.get("teacherName", ""),
+                    r.get("studentName", ""),
+                    r.get("score", 0),
+                    r.get("totalQuestions", 0),
+                    r.get("percentage", 0),
+                    "Passed" if r.get("passed") else "Failed",
+                    r.get("cheatViolations", 0),
+                    r.get("submittedAt", "")
+                ])
+        messagebox.showinfo("Export Successful", f"Global Assessment Submissions CSV exported to:\n\n{filepath}")
 
     def handle_export_csv(self):
         filepath = export_class_reports_to_csv()

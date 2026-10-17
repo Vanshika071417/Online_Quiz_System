@@ -11,23 +11,27 @@ window.switchView = function(viewName) {
   } else if (viewName === "login") {
     // If authenticated user attempts to visit login screen, route to their default view
     const role = (currentUser.role || "student").toLowerCase();
-    viewName = (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher")
-      ? "examiner"
-      : "student-lobby";
+    if (role === "admin") {
+      viewName = "admin-panel";
+    } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+      viewName = "examiner";
+    } else {
+      viewName = "student-lobby";
+    }
   } else {
     // 2. Role-based Access Guards (mirrors desktop application)
     const role = (currentUser.role || "student").toLowerCase();
     if (role === "student" || role === "learner") {
-      if (viewName === "examiner" || viewName === "builder") {
+      if (viewName === "examiner" || viewName === "builder" || viewName === "admin-panel") {
         if (typeof window.showToast === "function") {
-          window.showToast("Access Restricted: Examiner Studio is reserved for faculty and admin accounts.", "danger");
+          window.showToast("Access Restricted: That area is reserved for faculty and admin accounts.", "danger");
         }
         viewName = "student-lobby";
       }
     } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
-      if (viewName === "student-lobby" || viewName === "exam-arena") {
+      if (viewName === "student-lobby" || viewName === "exam-arena" || viewName === "admin-panel") {
         if (typeof window.showToast === "function") {
-          window.showToast("Faculty Mode: Candidate Arena is disabled for examiner accounts.", "info");
+          window.showToast("Faculty Mode: That area is not enabled for examiner accounts.", "info");
         }
         viewName = "examiner";
       }
@@ -47,20 +51,31 @@ window.switchView = function(viewName) {
   // Update navbar role tabs
   const studentBtn = document.getElementById("tabBtnStudent");
   const examinerBtn = document.getElementById("tabBtnExaminer");
+  const adminBtn = document.getElementById("tabBtnAdmin");
 
   if (viewName === "student-lobby" || viewName === "exam-arena" || viewName === "result") {
     studentBtn?.classList.add("active");
     examinerBtn?.classList.remove("active");
+    adminBtn?.classList.remove("active");
   } else if (viewName === "examiner" || viewName === "builder") {
     examinerBtn?.classList.add("active");
     studentBtn?.classList.remove("active");
+    adminBtn?.classList.remove("active");
     if (viewName === "examiner" && window.examinerStudio) {
       window.examinerStudio.renderQuizCatalog();
       window.examinerStudio.loadSubmissionsRoster();
     }
+  } else if (viewName === "admin-panel") {
+    adminBtn?.classList.add("active");
+    studentBtn?.classList.remove("active");
+    examinerBtn?.classList.remove("active");
+    if (window.adminPanel) {
+      window.adminPanel.loadAllData();
+    }
   } else if (viewName === "login") {
     studentBtn?.classList.remove("active");
     examinerBtn?.classList.remove("active");
+    adminBtn?.classList.remove("active");
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -124,7 +139,9 @@ window.quickLoginDemo = async function(username, password) {
     const user = await window.authManager.login(username, password);
     if (statusMsg) statusMsg.textContent = "";
     const role = (user.role || "student").toLowerCase();
-    if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+    if (role === "admin") {
+      window.switchView("admin-panel");
+    } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
       window.switchView("examiner");
     } else {
       window.switchView("student-lobby");
@@ -155,7 +172,9 @@ window.handleWebSignInSubmit = async function(e) {
     const user = await window.authManager.login(username, password);
     if (statusMsg) statusMsg.textContent = "";
     const role = (user.role || "student").toLowerCase();
-    if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+    if (role === "admin") {
+      window.switchView("admin-panel");
+    } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
       window.switchView("examiner");
     } else {
       window.switchView("student-lobby");
@@ -508,6 +527,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderStudentCatalog();
   examinerStudio.init();
+  if (window.adminPanel) {
+    window.adminPanel.init();
+  }
 
   // Search in student catalog
   const searchInput = document.getElementById("quizSearchInput");
@@ -534,7 +556,9 @@ document.addEventListener("DOMContentLoaded", () => {
       window.switchView("login");
     } else {
       const role = (user.role || "student").toLowerCase();
-      if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+      if (role === "admin") {
+        window.switchView("admin-panel");
+      } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
         window.switchView("examiner");
       } else {
         window.switchView("student-lobby");

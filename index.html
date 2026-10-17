@@ -48,6 +48,9 @@
         <button id="tabBtnExaminer" class="role-tab-btn" onclick="switchView('examiner'); examinerStudio.init();">
           <span>🛠️</span><span class="tab-text">Examiner Studio</span>
         </button>
+        <button id="tabBtnAdmin" class="role-tab-btn" style="display: none;" onclick="switchView('admin-panel')">
+          <span>🛡️</span><span class="tab-text">Admin Panel</span>
+        </button>
       </div>
 
       <!-- Accessibility & Display Controls (Theme, High Contrast, Font Resize, Minimalist Mode) -->
@@ -593,6 +596,172 @@
         </div>
       </div>
     </section>
+ 
+    <!-- 5. ENTERPRISE ADMIN COMMAND CENTER & ANALYTICS -->
+    <section id="view-admin-panel" class="view-section">
+      <!-- Section Header -->
+      <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700; margin-bottom: 0.5rem; display: inline-block;">
+            🛡️ Administrative Governance & Intelligence
+          </span>
+          <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">
+            Enterprise Admin Control Center
+          </h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Full visibility across all registered candidate accounts, individual assessment performance reports, and global quiz telemetry.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="adminPanel.exportUsersCSV()" title="Download CSV of all registered users">
+            <span>📥</span> Users Roster (CSV)
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="adminPanel.exportSubmissionsCSV()" title="Download CSV of all exam submissions">
+            <span>📥</span> Submissions Audit (CSV)
+          </button>
+          <button class="btn btn-cyan btn-sm" onclick="adminPanel.loadAllData()" title="Reload real-time system metrics">
+            <span>🔄</span> Refresh Telemetry
+          </button>
+        </div>
+      </div>
+
+      <!-- Executive KPI Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Users</div>
+          <div id="adminKpiTotalUsers" style="font-size: 1.85rem; font-weight: 800; color: var(--text-main); margin-top: 0.25rem;">0</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Students & Faculty</div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Active Quizzes</div>
+          <div id="adminKpiTotalQuizzes" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-indigo); margin-top: 0.25rem;">0</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Published & Drafts</div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Attempts</div>
+          <div id="adminKpiTotalAttempts" style="font-size: 1.85rem; font-weight: 800; color: var(--text-main); margin-top: 0.25rem;">0</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Completed exams</div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Global Pass Rate</div>
+          <div id="adminKpiPassRate" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-success); margin-top: 0.25rem;">0%</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Passing threshold met</div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Platform Avg Score</div>
+          <div id="adminKpiAvgScore" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-cyan); margin-top: 0.25rem;">0%</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Mean overall score</div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Proctoring Flags</div>
+          <div id="adminKpiViolations" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-danger); margin-top: 0.25rem;">0</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Tab switch detections</div>
+        </div>
+      </div>
+
+      <!-- Segmented Admin Sub-Tab Controls -->
+      <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-subtle); margin-bottom: 1.5rem; padding-bottom: 0.5rem; overflow-x: auto;">
+        <button id="adminSubTabBtn-users" class="btn btn-secondary btn-sm admin-sub-tab-btn active" onclick="adminPanel.switchSubTab('users')">
+          <span>👥</span> Users Governance & Reports
+        </button>
+        <button id="adminSubTabBtn-quizzes" class="btn btn-secondary btn-sm admin-sub-tab-btn" onclick="adminPanel.switchSubTab('quizzes')">
+          <span>📈</span> Quiz Performance Analytics
+        </button>
+        <button id="adminSubTabBtn-submissions" class="btn btn-secondary btn-sm admin-sub-tab-btn" onclick="adminPanel.switchSubTab('submissions')">
+          <span>📜</span> Global Submissions Audit Trail
+        </button>
+      </div>
+
+      <!-- SUB-VIEW 1: USERS GOVERNANCE & REPORTS -->
+      <div id="adminSubView-users" class="admin-sub-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex: 1; max-width: 500px;">
+            <input type="text" id="adminUserSearchInput" class="form-input" placeholder="🔍 Search users by name, username, ID, or department..." style="font-size: 0.875rem;">
+            <select id="adminUserRoleFilter" class="form-select" style="width: 140px; font-size: 0.85rem;">
+              <option value="all" selected>All Roles</option>
+              <option value="student">🎓 Students</option>
+              <option value="faculty">🛠️ Faculty</option>
+              <option value="admin">🛡️ Admins</option>
+            </select>
+          </div>
+          <div id="adminUsersFilteredCount" style="font-size: 0.825rem; color: var(--text-muted); font-weight: 600;">
+            Showing all registered accounts
+          </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow-x: auto; border: 1px solid var(--border-medium); border-radius: var(--radius-lg);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+            <thead style="background: var(--bg-tertiary); border-bottom: 2px solid var(--border-subtle); color: var(--text-muted); font-size: 0.775rem; text-transform: uppercase;">
+              <tr>
+                <th style="padding: 0.85rem 1rem;"># No.</th>
+                <th style="padding: 0.85rem 1rem;">User Details</th>
+                <th style="padding: 0.85rem 1rem;">Role</th>
+                <th style="padding: 0.85rem 1rem;">Department / Cohort</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Quizzes Taken</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Avg Score</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Pass Rate</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Flags</th>
+                <th style="padding: 0.85rem 1rem; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <!-- Populated by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 2: QUIZ PERFORMANCE ANALYTICS -->
+      <div id="adminSubView-quizzes" class="admin-sub-view" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <input type="text" id="adminQuizSearchInput" class="form-input" placeholder="🔍 Search quizzes by title, category, code, or examiner..." style="max-width: 450px; font-size: 0.875rem;">
+          <div style="font-size: 0.825rem; color: var(--text-muted);">
+            Real-time difficulty analysis calculated from student pass thresholds
+          </div>
+        </div>
+
+        <div id="adminQuizzesAnalyticsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">
+          <!-- Populated by admin.js -->
+        </div>
+      </div>
+
+      <!-- SUB-VIEW 3: GLOBAL SUBMISSIONS AUDIT TRAIL -->
+      <div id="adminSubView-submissions" class="admin-sub-view" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex: 1; max-width: 500px;">
+            <input type="text" id="adminSubmissionsSearchInput" class="form-input" placeholder="🔍 Search attempts by candidate, quiz title, or join code..." style="font-size: 0.875rem;">
+            <select id="adminSubmissionsResultFilter" class="form-select" style="width: 140px; font-size: 0.85rem;">
+              <option value="all" selected>All Results</option>
+              <option value="passed">✅ Passed Only</option>
+              <option value="failed">❌ Failed Only</option>
+            </select>
+          </div>
+          <div id="adminSubmissionsFilteredCount" style="font-size: 0.825rem; color: var(--text-muted); font-weight: 600;">
+            Showing all recent submissions
+          </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow-x: auto; border: 1px solid var(--border-medium); border-radius: var(--radius-lg);">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
+            <thead style="background: var(--bg-tertiary); border-bottom: 2px solid var(--border-subtle); color: var(--text-muted); font-size: 0.775rem; text-transform: uppercase;">
+              <tr>
+                <th style="padding: 0.85rem 1rem;">Candidate Name</th>
+                <th style="padding: 0.85rem 1rem;">Quiz Assessment & Code</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Score</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Percentage</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Result</th>
+                <th style="padding: 0.85rem 1rem; text-align: center;">Proctoring Flags</th>
+                <th style="padding: 0.85rem 1rem; text-align: right;">Submission Time</th>
+              </tr>
+            </thead>
+            <tbody id="adminSubmissionsTableBody">
+              <!-- Populated by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
   </main>
 
@@ -802,6 +971,23 @@
     </div>
   </div>
 
+  <!-- 6. Admin User Detailed Report Modal -->
+  <div id="adminUserReportModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 id="adminReportModalUserName" class="modal-title">📊 Candidate Performance Report</h3>
+        <button class="modal-close" onclick="adminPanel.closeUserReportModal()">✕</button>
+      </div>
+      <div id="adminReportModalBody" class="modal-body">
+        <!-- Injected by admin.js -->
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-secondary" onclick="adminPanel.closeUserReportModal()">Close Report</button>
+        <button class="btn btn-cyan btn-sm" onclick="window.print()">🖨️ Print / Save Report</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
@@ -817,6 +1003,7 @@
   <script src="./assets/js/examiner.js?v=3.1"></script>
   <script src="./assets/js/certificates.js?v=3.1"></script>
   <script src="./assets/js/auth.js?v=3.1"></script>
+  <script src="./assets/js/admin.js?v=3.2"></script>
   <script src="./assets/js/app.js?v=3.1"></script>
 </body>
 </html>

@@ -180,6 +180,13 @@ body.dark-theme .role-tab-btn.active {
   background: var(--bg-glass);
 }
 
+.admin-sub-tab-btn.active {
+  background: var(--gradient-primary) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: var(--shadow-sm);
+}
+
 /* Main Container Views */
 .main-content {
   max-width: 1320px;

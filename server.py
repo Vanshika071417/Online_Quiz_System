@@ -13,8 +13,10 @@ import json
 import random
 import sqlite3
 import datetime
+import io
+import csv
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -480,6 +482,297 @@ def get_admin_global_stats():
         "activeTeachers": active_teachers,
         "activeStudents": active_students
     }
+
+@app.get("/api/admin/users")
+def get_admin_all_users():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, role, full_name, department, created_at FROM users ORDER BY created_at ASC")
+    users_rows = cursor.fetchall()
+
+    users_list = []
+    for idx, u in enumerate(users_rows, start=1):
+        uname = u["username"].strip()
+        fname = u["full_name"].strip()
+        cursor.execute("""
+            SELECT COUNT(*), SUM(passed), AVG(percentage), MAX(percentage), SUM(cheat_violations), MAX(submitted_at)
+            FROM attempts
+            WHERE LOWER(student_name) = LOWER(?) OR LOWER(student_name) = LOWER(?)
+        """, (fname, uname))
+        stat_row = cursor.fetchone()
+        attempts_count = stat_row[0] or 0
+        passed_count = stat_row[1] or 0
+        avg_score = round(stat_row[2]) if stat_row[2] is not None else 0
+        highest_score = stat_row[3] or 0
+        violations = stat_row[4] or 0
+        last_attempt = stat_row[5] or None
+
+        pass_rate = round((passed_count / attempts_count) * 100) if attempts_count > 0 else 0
+
+        users_list.append({
+            "userNo": idx,
+            "id": u["id"],
+            "username": u["username"],
+            "fullName": u["full_name"],
+            "role": u["role"].lower(),
+            "department": u["department"] or "General",
+            "createdAt": u["created_at"],
+            "totalAttempts": attempts_count,
+            "passedAttempts": passed_count,
+            "failedAttempts": max(0, attempts_count - passed_count),
+            "passRate": pass_rate,
+            "avgScore": avg_score,
+            "highestScore": highest_score,
+            "totalViolations": violations,
+            "latestAttempt": last_attempt
+        })
+    conn.close()
+    return users_list
+
+@app.get("/api/admin/users/{user_id}/report")
+def get_admin_user_report(user_id: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, role, full_name, department, created_at FROM users WHERE id = ?", (user_id,))
+    user_row = cursor.fetchone()
+    if not user_row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    uname = user_row["username"].strip()
+    fname = user_row["full_name"].strip()
+
+    cursor.execute("""
+        SELECT * FROM attempts
+        WHERE LOWER(student_name) = LOWER(?) OR LOWER(student_name) = LOWER(?)
+        ORDER BY submitted_at DESC
+    """, (fname, uname))
+    attempts_rows = cursor.fetchall()
+    attempts_list = []
+    total_passed = 0
+    total_violations = 0
+    percentages = []
+
+    for r in attempts_rows:
+        keys = r.keys()
+        pct = r["percentage"]
+        percentages.append(pct)
+        passed = bool(r["passed"])
+        if passed:
+            total_passed += 1
+        violations = r["cheat_violations"] if "cheat_violations" in keys else 0
+        total_violations += violations
+
+        attempts_list.append({
+            "id": r["id"],
+            "quizId": r["quiz_id"],
+            "quizTitle": r["quiz_title"],
+            "joinCode": r["join_code"] if "join_code" in keys else "QZ-1001",
+            "teacherName": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
+            "studentName": r["student_name"] if "student_name" in keys else fname,
+            "score": r["score"],
+            "totalQuestions": r["total_questions"],
+            "percentage": pct,
+            "passed": passed,
+            "cheatViolations": violations,
+            "submittedAt": r["submitted_at"]
+        })
+    conn.close()
+
+    total_attempts = len(attempts_list)
+    avg_score = round(sum(percentages) / total_attempts) if total_attempts > 0 else 0
+    highest_score = max(percentages) if percentages else 0
+    lowest_score = min(percentages) if percentages else 0
+    pass_rate = round((total_passed / total_attempts) * 100) if total_attempts > 0 else 0
+
+    return {
+        "user": {
+            "id": user_row["id"],
+            "username": user_row["username"],
+            "fullName": user_row["full_name"],
+            "role": user_row["role"].lower(),
+            "department": user_row["department"] or "General",
+            "createdAt": user_row["created_at"]
+        },
+        "summary": {
+            "totalAttempts": total_attempts,
+            "passedAttempts": total_passed,
+            "failedAttempts": max(0, total_attempts - total_passed),
+            "passRate": pass_rate,
+            "avgScore": avg_score,
+            "highestScore": highest_score,
+            "lowestScore": lowest_score,
+            "totalViolations": total_violations
+        },
+        "attempts": attempts_list
+    }
+
+@app.get("/api/admin/analytics")
+def get_admin_comprehensive_analytics():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # User counts
+    cursor.execute("SELECT COUNT(*), SUM(CASE WHEN LOWER(role) = 'student' THEN 1 ELSE 0 END), SUM(CASE WHEN LOWER(role) = 'faculty' THEN 1 ELSE 0 END) FROM users")
+    user_counts = cursor.fetchone()
+    total_users = user_counts[0] or 0
+    total_students = user_counts[1] or 0
+    total_faculty = user_counts[2] or 0
+
+    # Attempts counts & aggregate metrics
+    cursor.execute("SELECT COUNT(*), SUM(passed), AVG(percentage), SUM(cheat_violations) FROM attempts")
+    att_stats = cursor.fetchone()
+    total_attempts = att_stats[0] or 0
+    total_passed = att_stats[1] or 0
+    overall_pass_rate = round((total_passed / total_attempts) * 100) if total_attempts > 0 else 0
+    platform_avg_score = round(att_stats[2]) if att_stats[2] is not None else 0
+    total_violations = att_stats[3] or 0
+
+    # Quizzes count & breakdown
+    cursor.execute("SELECT id, title, category, join_code, teacher_name, duration_minutes, passing_score FROM quizzes ORDER BY created_at DESC")
+    quiz_rows = cursor.fetchall()
+    quizzes_analytics = []
+
+    for q in quiz_rows:
+        qid = q["id"]
+        cursor.execute("""
+            SELECT COUNT(*), SUM(passed), AVG(percentage), MAX(percentage), MIN(percentage), SUM(cheat_violations)
+            FROM attempts
+            WHERE quiz_id = ?
+        """, (qid,))
+        q_stats = cursor.fetchone()
+        q_attempts = q_stats[0] or 0
+        q_passed = q_stats[1] or 0
+        q_pass_rate = round((q_passed / q_attempts) * 100) if q_attempts > 0 else 0
+        q_avg_score = round(q_stats[2]) if q_stats[2] is not None else 0
+        q_highest = q_stats[3] if q_stats[3] is not None else 0
+        q_lowest = q_stats[4] if q_stats[4] is not None else 0
+        q_violations = q_stats[5] or 0
+
+        # Difficulty rating calculation
+        if q_attempts == 0:
+            difficulty = "Balanced"
+        elif q_pass_rate >= 80:
+            difficulty = "Beginner (High Pass)"
+        elif q_pass_rate >= 50:
+            difficulty = "Balanced (Standard)"
+        else:
+            difficulty = "Rigorous (Challenging)"
+
+        quizzes_analytics.append({
+            "id": q["id"],
+            "title": q["title"],
+            "category": q["category"],
+            "joinCode": q["join_code"],
+            "teacherName": q["teacher_name"],
+            "durationMinutes": q["duration_minutes"],
+            "passingScore": q["passing_score"],
+            "attemptsCount": q_attempts,
+            "passRate": q_pass_rate,
+            "avgScore": q_avg_score,
+            "highestScore": q_highest,
+            "lowestScore": q_lowest,
+            "totalViolations": q_violations,
+            "difficultyRating": difficulty
+        })
+
+    # Recent submissions audit
+    cursor.execute("SELECT * FROM attempts ORDER BY submitted_at DESC LIMIT 50")
+    sub_rows = cursor.fetchall()
+    recent_submissions = []
+    for r in sub_rows:
+        keys = r.keys()
+        recent_submissions.append({
+            "id": r["id"],
+            "quizTitle": r["quiz_title"],
+            "joinCode": r["join_code"] if "join_code" in keys else "QZ-1001",
+            "teacherName": r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
+            "studentName": r["student_name"] if "student_name" in keys else "Candidate",
+            "score": r["score"],
+            "totalQuestions": r["total_questions"],
+            "percentage": r["percentage"],
+            "passed": bool(r["passed"]),
+            "cheatViolations": r["cheat_violations"] if "cheat_violations" in keys else 0,
+            "submittedAt": r["submitted_at"]
+        })
+
+    conn.close()
+
+    return {
+        "kpis": {
+            "totalUsers": total_users,
+            "totalStudents": total_students,
+            "totalFaculty": total_faculty,
+            "totalQuizzes": len(quiz_rows),
+            "totalAttempts": total_attempts,
+            "overallPassRate": overall_pass_rate,
+            "platformAvgScore": platform_avg_score,
+            "totalViolations": total_violations
+        },
+        "quizzesAnalytics": quizzes_analytics,
+        "recentSubmissions": recent_submissions
+    }
+
+@app.get("/api/admin/export/users.csv")
+def export_admin_users_csv():
+    users_data = get_admin_all_users()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "User No", "User ID", "Full Name", "Username", "Role", "Department",
+        "Total Attempts", "Passed Attempts", "Failed Attempts", "Pass Rate (%)",
+        "Average Score (%)", "Highest Score (%)", "Total Violations", "Registered At"
+    ])
+    for u in users_data:
+        writer.writerow([
+            u["userNo"], u["id"], u["fullName"], u["username"], u["role"].upper(), u["department"],
+            u["totalAttempts"], u["passedAttempts"], u["failedAttempts"], f"{u['passRate']}%",
+            f"{u['avgScore']}%", f"{u['highestScore']}%", u["totalViolations"], u["createdAt"]
+        ])
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=quizsphere_users_roster.csv"}
+    )
+
+@app.get("/api/admin/export/submissions.csv")
+def export_admin_submissions_csv():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM attempts ORDER BY submitted_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Attempt ID", "Candidate Name", "Quiz Title", "Join Code", "Teacher / Examiner",
+        "Score", "Total Questions", "Percentage (%)", "Result", "Proctoring Violations", "Submitted At"
+    ])
+    for r in rows:
+        keys = r.keys()
+        writer.writerow([
+            r["id"],
+            r["student_name"] if "student_name" in keys else "Candidate",
+            r["quiz_title"],
+            r["join_code"] if "join_code" in keys else "QZ-1001",
+            r["teacher_name"] if "teacher_name" in keys else "Prof. Alan Turing",
+            r["score"],
+            r["total_questions"],
+            f"{r['percentage']}%",
+            "PASSED" if r["passed"] else "FAILED",
+            r["cheat_violations"] if "cheat_violations" in keys else 0,
+            r["submitted_at"]
+        ])
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=all_quiz_submissions_audit.csv"}
+    )
 
 
 # WebSocket Real-Time Clock & Proctoring Hub

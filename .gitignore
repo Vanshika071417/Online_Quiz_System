@@ -28,3 +28,4 @@ Thumbs.db
 # Databases & Backups
 *.db
 backups/
+reports/*.csv
