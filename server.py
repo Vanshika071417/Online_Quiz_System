@@ -15,6 +15,7 @@ import sqlite3
 import datetime
 import io
 import csv
+from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,72 +27,7 @@ from backend.core.telemetry import RequestIDMiddleware
 from backend.core.bootstrap import init_and_seed_db
 from backend.api.v1.router import api_v1_router
 
-app = FastAPI(
-    title="Online Quiz System API",
-    description="Enterprise Multi-Tenant Assessment Engine with Server Deadlines & Durable Autosave",
-    version="2.2.0"
-)
-
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(api_v1_router)
-
-@app.on_event("startup")
-def on_app_startup():
-    init_db()
-    init_and_seed_db()
-
 DB_PATH = "quiz_system.db"
-
-# Pydantic Schemas
-class QuestionSchema(BaseModel):
-    id: str
-    text: str
-    code: Optional[str] = None
-    options: List[str]
-    correct: int
-    explanation: Optional[str] = ""
-
-class QuizCreateSchema(BaseModel):
-    id: Optional[str] = None
-    joinCode: Optional[str] = None
-    teacherName: str = "Prof. Alan Turing"
-    title: str
-    category: str = "General"
-    description: Optional[str] = ""
-    durationMinutes: int = 10
-    passingScore: int = 70
-    tags: List[str] = []
-    questions: List[QuestionSchema]
-
-class SubmitAnswersSchema(BaseModel):
-    studentName: str
-    answers: Dict[str, int]
-    cheatViolations: int = 0
-
-class AIGenerateRequest(BaseModel):
-    topic: str
-    numQuestions: int = 5
-    difficulty: str = "Medium"
-
-class UserLoginSchema(BaseModel):
-    username: str
-    password: str
-
-class UserRegisterSchema(BaseModel):
-    username: str
-    password: str
-    role: str = "student"
-    full_name: str
-    department: Optional[str] = "Computer Science & Engineering"
-
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -177,10 +113,108 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    init_and_seed_db()
+    yield
+
+app = FastAPI(
+    title="Online Quiz System API",
+    description="Enterprise Multi-Tenant Assessment Engine with Server Deadlines & Durable Autosave",
+    version="2.2.0",
+    lifespan=lifespan
+)
+
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_v1_router)
+
+# Pydantic Schemas
+class QuestionSchema(BaseModel):
+    id: str
+    text: str
+    code: Optional[str] = None
+    options: List[str]
+    correct: int
+    explanation: Optional[str] = ""
+
+class QuizCreateSchema(BaseModel):
+    id: Optional[str] = None
+    joinCode: Optional[str] = None
+    teacherName: str = "Prof. Alan Turing"
+    title: str
+    category: str = "General"
+    description: Optional[str] = ""
+    durationMinutes: int = 10
+    passingScore: int = 70
+    tags: List[str] = []
+    questions: List[QuestionSchema]
+
+class SubmitAnswersSchema(BaseModel):
+    studentName: str
+    answers: Dict[str, int]
+    cheatViolations: int = 0
+
+class AIGenerateRequest(BaseModel):
+    topic: str
+    numQuestions: int = 5
+    difficulty: str = "Medium"
+
+class UserLoginSchema(BaseModel):
+    username: str
+    password: str
+
+class UserRegisterSchema(BaseModel):
+    username: str
+    password: str
+    role: str = "student"
+    full_name: str
+    department: Optional[str] = "Computer Science & Engineering"
+
+class CurrentUserQuery(BaseModel):
+    username: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 # ---------------- API ENDPOINTS ----------------
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
+
+@app.api_route("/api/get_current_user", methods=["GET", "POST"])
+def api_get_current_user(query: Optional[CurrentUserQuery] = None):
+    uname = query.username if query else None
+    uid = query.user_id if query else None
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    if uid:
+        cursor.execute("SELECT * FROM users WHERE id = ?", (uid,))
+    elif uname:
+        cursor.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (uname.strip(),))
+    else:
+        cursor.execute("SELECT * FROM users ORDER BY created_at ASC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    keys = row.keys()
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "role": row["role"].lower(),
+        "full_name": row["full_name"],
+        "department": row["department"] if "department" in keys else "General"
+    }
 
 @app.post("/api/auth/login")
 def api_auth_login(req: UserLoginSchema):

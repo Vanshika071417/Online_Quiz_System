@@ -63,3 +63,21 @@ def test_web_auth_register_duplicate():
     })
     assert response.status_code == 400
     assert "already exists" in response.json()["detail"]
+
+def test_api_get_current_user():
+    # 1. GET with no params returns default user
+    res_get = client.get("/api/get_current_user")
+    assert res_get.status_code == 200
+    assert "username" in res_get.json()
+
+    # 2. POST with username
+    res_post = client.post("/api/get_current_user", json={"username": "faculty"})
+    assert res_post.status_code == 200
+    data = res_post.json()
+    assert data["username"] == "faculty"
+    assert data["role"] == "faculty"
+
+    # 3. GET favicon.ico returns 204
+    res_fav = client.get("/favicon.ico")
+    assert res_fav.status_code == 204
+
