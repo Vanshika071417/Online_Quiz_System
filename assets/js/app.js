@@ -1,8 +1,39 @@
 // Main Application Controller & View Router
 
-window.currentView = "student-lobby";
+window.currentView = "login";
 
 window.switchView = function(viewName) {
+  const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
+
+  // 1. Unauthenticated Guard: Redirect any unauthorized attempt to login screen
+  if (!currentUser) {
+    viewName = "login";
+  } else if (viewName === "login") {
+    // If authenticated user attempts to visit login screen, route to their default view
+    const role = (currentUser.role || "student").toLowerCase();
+    viewName = (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher")
+      ? "examiner"
+      : "student-lobby";
+  } else {
+    // 2. Role-based Access Guards (mirrors desktop application)
+    const role = (currentUser.role || "student").toLowerCase();
+    if (role === "student" || role === "learner") {
+      if (viewName === "examiner" || viewName === "builder") {
+        if (typeof window.showToast === "function") {
+          window.showToast("Access Restricted: Examiner Studio is reserved for faculty and admin accounts.", "danger");
+        }
+        viewName = "student-lobby";
+      }
+    } else if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+      if (viewName === "student-lobby" || viewName === "exam-arena") {
+        if (typeof window.showToast === "function") {
+          window.showToast("Faculty Mode: Candidate Arena is disabled for examiner accounts.", "info");
+        }
+        viewName = "examiner";
+      }
+    }
+  }
+
   window.currentView = viewName;
   document.querySelectorAll(".view-section").forEach(sec => {
     sec.classList.remove("active");
@@ -27,9 +58,153 @@ window.switchView = function(viewName) {
       window.examinerStudio.renderQuizCatalog();
       window.examinerStudio.loadSubmissionsRoster();
     }
+  } else if (viewName === "login") {
+    studentBtn?.classList.remove("active");
+    examinerBtn?.classList.remove("active");
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+// -------------------------------------------------------------
+// Authentication Portal Handlers (Web Mirror of Desktop App)
+// -------------------------------------------------------------
+
+window.switchAuthTab = function(tab) {
+  const tabSignIn = document.getElementById("authTabSignIn");
+  const tabRegister = document.getElementById("authTabRegister");
+  const formSignIn = document.getElementById("authFormSignIn");
+  const formRegister = document.getElementById("authFormRegister");
+  const loginStatus = document.getElementById("loginStatusMsg");
+  const regStatus = document.getElementById("regStatusMsg");
+
+  if (loginStatus) loginStatus.textContent = "";
+  if (regStatus) regStatus.textContent = "";
+
+  if (tab === "signin") {
+    tabSignIn?.classList.add("active");
+    tabRegister?.classList.remove("active");
+    if (formSignIn) formSignIn.style.display = "block";
+    if (formRegister) formRegister.style.display = "none";
+  } else {
+    tabRegister?.classList.add("active");
+    tabSignIn?.classList.remove("active");
+    if (formSignIn) formSignIn.style.display = "none";
+    if (formRegister) formRegister.style.display = "block";
+  }
+};
+
+window.togglePasswordVisibility = function(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!input) return;
+
+  if (input.type === "password") {
+    input.type = "text";
+    if (btn) btn.textContent = "🙈";
+  } else {
+    input.type = "password";
+    if (btn) btn.textContent = "👁️";
+  }
+};
+
+window.quickLoginDemo = async function(username, password) {
+  const usernameInput = document.getElementById("loginUsername");
+  const passwordInput = document.getElementById("loginPassword");
+  if (usernameInput) usernameInput.value = username;
+  if (passwordInput) passwordInput.value = password;
+
+  const statusMsg = document.getElementById("loginStatusMsg");
+  if (statusMsg) {
+    statusMsg.style.color = "var(--accent-cyan)";
+    statusMsg.textContent = `⚡ Authenticating ${username}...`;
+  }
+
+  try {
+    const user = await window.authManager.login(username, password);
+    if (statusMsg) statusMsg.textContent = "";
+    const role = (user.role || "student").toLowerCase();
+    if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+      window.switchView("examiner");
+    } else {
+      window.switchView("student-lobby");
+    }
+    window.showToast?.(`Welcome back, ${user.full_name} (${user.role.toUpperCase()})!`, "success");
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.color = "#ef4444";
+      statusMsg.textContent = err.message || "Failed to authenticate.";
+    }
+  }
+};
+
+window.handleWebSignInSubmit = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const username = document.getElementById("loginUsername")?.value.trim();
+  const password = document.getElementById("loginPassword")?.value.trim();
+  const statusMsg = document.getElementById("loginStatusMsg");
+  const submitBtn = document.getElementById("signInSubmitBtn");
+
+  if (statusMsg) {
+    statusMsg.style.color = "var(--accent-cyan)";
+    statusMsg.textContent = "Authenticating credentials...";
+  }
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const user = await window.authManager.login(username, password);
+    if (statusMsg) statusMsg.textContent = "";
+    const role = (user.role || "student").toLowerCase();
+    if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+      window.switchView("examiner");
+    } else {
+      window.switchView("student-lobby");
+    }
+    window.showToast?.(`Welcome back, ${user.full_name}!`, "success");
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.color = "#ef4444";
+      statusMsg.textContent = err.message || "Invalid credentials.";
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+};
+
+window.handleWebRegisterSubmit = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const fullName = document.getElementById("regFullName")?.value.trim();
+  const username = document.getElementById("regUsername")?.value.trim();
+  const password = document.getElementById("regPassword")?.value.trim();
+  const role = document.getElementById("regRole")?.value || "student";
+  const dept = document.getElementById("regDept")?.value.trim() || "Computer Science";
+  const statusMsg = document.getElementById("regStatusMsg");
+  const submitBtn = document.getElementById("regSubmitBtn");
+
+  if (statusMsg) {
+    statusMsg.style.color = "var(--accent-cyan)";
+    statusMsg.textContent = "Creating account...";
+  }
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const user = await window.authManager.register(username, password, role, fullName, dept);
+    if (statusMsg) statusMsg.textContent = "";
+    const userRole = (user.role || "student").toLowerCase();
+    if (userRole === "faculty" || userRole === "instructor" || userRole === "examiner" || userRole === "teacher") {
+      window.switchView("examiner");
+    } else {
+      window.switchView("student-lobby");
+    }
+    window.showToast?.(`Account registered successfully! Welcome, ${user.full_name}.`, "success");
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.color = "#ef4444";
+      statusMsg.textContent = err.message || "Registration failed.";
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
 };
 
 window.showToast = function(message, type = "info") {
@@ -349,6 +524,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+  }
+
+  // Initialize Authentication State & View Session
+  if (window.authManager) {
+    window.authManager.updateNavSessionState();
+    const user = window.authManager.getCurrentUser();
+    if (!user) {
+      window.switchView("login");
+    } else {
+      const role = (user.role || "student").toLowerCase();
+      if (role === "faculty" || role === "instructor" || role === "examiner" || role === "teacher") {
+        window.switchView("examiner");
+      } else {
+        window.switchView("student-lobby");
+      }
+    }
+  } else {
+    window.switchView("login");
   }
 
   // Register Service Worker for PWA

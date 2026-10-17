@@ -79,6 +79,17 @@ class AIGenerateRequest(BaseModel):
     numQuestions: int = 5
     difficulty: str = "Medium"
 
+class UserLoginSchema(BaseModel):
+    username: str
+    password: str
+
+class UserRegisterSchema(BaseModel):
+    username: str
+    password: str
+    role: str = "student"
+    full_name: str
+    department: Optional[str] = "Computer Science & Engineering"
+
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -137,6 +148,30 @@ def init_db():
         else:
             cursor.execute("ALTER TABLE attempts ADD COLUMN student_name TEXT DEFAULT 'Candidate'")
 
+    # Users Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            department TEXT DEFAULT 'Computer Science & Engineering',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        default_users = [
+            ("usr-admin", "admin", "admin123", "admin", "System Administrator", "Operations & Quality Assurance"),
+            ("usr-fac-1", "faculty", "faculty123", "faculty", "Prof. Alan Turing", "Computer Science & Engineering"),
+            ("usr-stu-1", "student", "student123", "student", "Alex Mercer", "B.Tech CSE - 2026")
+        ]
+        cursor.executemany("""
+            INSERT INTO users (id, username, password, role, full_name, department)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, default_users)
+
     conn.commit()
     conn.close()
 
@@ -144,6 +179,66 @@ init_db()
 
 
 # ---------------- API ENDPOINTS ----------------
+
+@app.post("/api/auth/login")
+def api_auth_login(req: UserLoginSchema):
+    """Authenticates username and password against users table."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", (req.username.strip(),))
+    row = cursor.fetchone()
+    conn.close()
+    if not row or row["password"] != req.password.strip():
+        raise HTTPException(status_code=401, detail="Invalid credentials. Check your username and password.")
+    keys = row.keys()
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "role": row["role"].lower(),
+        "full_name": row["full_name"],
+        "department": row["department"] if "department" in keys else "General"
+    }
+
+@app.post("/api/auth/register")
+def api_auth_register(req: UserRegisterSchema):
+    """Registers a new student or faculty account."""
+    username = req.username.strip()
+    password = req.password.strip()
+    full_name = req.full_name.strip()
+    department = (req.department or "General").strip()
+    role = req.role.strip().lower()
+
+    if len(username) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters.")
+    if len(password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters.")
+    if not full_name:
+        raise HTTPException(status_code=400, detail="Full name is required.")
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(?)", (username,))
+    if cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Username '{username}' already exists. Please choose a different username.")
+
+    user_id = f"usr-{int(datetime.datetime.now().timestamp() * 1000)}"
+    cursor.execute("""
+        INSERT INTO users (id, username, password, role, full_name, department)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (user_id, username, password, role, full_name, department))
+    conn.commit()
+    conn.close()
+
+    return {
+        "id": user_id,
+        "username": username,
+        "role": role,
+        "full_name": full_name,
+        "department": department
+    }
+
 
 @app.post("/api/ai-generate")
 def ai_generate_quiz(req: AIGenerateRequest):

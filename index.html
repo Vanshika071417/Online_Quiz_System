@@ -41,7 +41,7 @@
 
     <div class="nav-controls">
       <!-- Role Switcher Tabs -->
-      <div class="role-switcher">
+      <div id="navRoleSwitcher" class="role-switcher" style="display: none;">
         <button id="tabBtnStudent" class="role-tab-btn active" onclick="switchView('student-lobby')">
           <span>🎓</span><span class="tab-text">Candidate Arena</span>
         </button>
@@ -73,14 +73,142 @@
       <button class="btn btn-secondary btn-sm" onclick="openCloudSettingsModal()" title="Firebase / Supabase Cloud Settings">
         <span>☁️</span><span class="tab-text">Cloud Sync</span>
       </button>
+
+      <!-- User Chip & Sign Out Controls -->
+      <button id="navUserChip" class="access-btn badge-cyan" onclick="handleWebUserChipClick()" title="Sign In">
+        <span>🔒</span> <span class="tab-text">Sign In</span>
+      </button>
+      <button id="navLogoutBtn" class="btn btn-sm btn-danger" style="display: none;" onclick="handleWebLogout()" title="Sign Out">
+        <span>🚪</span> <span class="tab-text">Sign Out</span>
+      </button>
     </div>
   </header>
 
   <!-- Main Content Views Container -->
   <main class="main-content">
 
+    <!-- 0. LOGIN & REGISTRATION PORTAL -->
+    <section id="view-login" class="view-section active">
+      <div style="display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 1.5rem 0;">
+        <div class="card" style="max-width: 520px; width: 100%; padding: 2.25rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--border-medium); background: var(--bg-card);">
+          
+          <!-- Logo & Brand Header -->
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan)); font-size: 1.75rem; color: #fff; margin-bottom: 0.75rem; box-shadow: var(--shadow-neon);">
+              ⚡
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h2 style="font-size: 1.65rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">QuizSphere</h2>
+              <span class="badge badge-cyan" style="font-weight: 800; font-size: 0.7rem;">Pro 2.0</span>
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">Assessment Portal Sign In</h3>
+            <p style="color: var(--text-muted); font-size: 0.875rem;">Secure sign in for students, examiners, and evaluators.</p>
+          </div>
+
+          <!-- Segmented Tab Switcher: Sign In vs Create Account -->
+          <div class="role-switcher" style="display: flex; width: 100%; margin-bottom: 1.5rem; background: var(--bg-tertiary); padding: 0.25rem; border-radius: var(--radius-md);">
+            <button type="button" id="authTabSignIn" class="role-tab-btn active" style="flex: 1; justify-content: center; border-radius: var(--radius-sm);" onclick="switchAuthTab('signin')">
+              <span>🔑</span> Sign In
+            </button>
+            <button type="button" id="authTabRegister" class="role-tab-btn" style="flex: 1; justify-content: center; border-radius: var(--radius-sm);" onclick="switchAuthTab('register')">
+              <span>✨</span> Create Account
+            </button>
+          </div>
+
+          <!-- 1. SIGN IN FORM -->
+          <div id="authFormSignIn">
+            <form onsubmit="handleWebSignInSubmit(event)">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Username / Student ID:</label>
+                <input type="text" id="loginUsername" class="form-input" placeholder="e.g. student or faculty" required style="font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Password:</label>
+                <div style="position: relative;">
+                  <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required style="font-size: 0.95rem; padding-right: 45px;">
+                  <button type="button" id="toggleLoginPassBtn" onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPassBtn')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted);" title="Show/Hide Password">
+                    👁️
+                  </button>
+                </div>
+              </div>
+
+              <div id="loginStatusMsg" style="min-height: 22px; font-size: 0.825rem; font-weight: 600; color: #ef4444; margin-bottom: 0.75rem;"></div>
+
+              <button type="submit" id="signInSubmitBtn" class="btn btn-cyan" style="width: 100%; height: 44px; font-size: 0.95rem; font-weight: 700; margin-bottom: 1.5rem;">
+                Sign In 🚀
+              </button>
+            </form>
+
+            <!-- Quick Access Demo Logins -->
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem;">
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.75rem;">
+                ⚡ One-Click Demo Logins:
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; font-weight: 700; justify-content: center;" onclick="quickLoginDemo('student', 'student123')">
+                  🎓 Student
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; font-weight: 700; justify-content: center;" onclick="quickLoginDemo('faculty', 'faculty123')">
+                  🛠️ Faculty
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; font-weight: 700; justify-content: center;" onclick="quickLoginDemo('admin', 'admin123')">
+                  🛡️ Admin
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. CREATE ACCOUNT FORM -->
+          <div id="authFormRegister" style="display: none;">
+            <form onsubmit="handleWebRegisterSubmit(event)">
+              <div class="form-group" style="margin-bottom: 0.85rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Full Name:</label>
+                <input type="text" id="regFullName" class="form-input" placeholder="e.g. Samantha Ray" required style="font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.85rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Username:</label>
+                <input type="text" id="regUsername" class="form-input" placeholder="e.g. sray2026" required style="font-size: 0.95rem;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.85rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Password:</label>
+                <div style="position: relative;">
+                  <input type="password" id="regPassword" class="form-input" placeholder="Minimum 4 characters" required minlength="4" style="font-size: 0.95rem; padding-right: 45px;">
+                  <button type="button" id="toggleRegPassBtn" onclick="togglePasswordVisibility('regPassword', 'toggleRegPassBtn')" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-muted);" title="Show/Hide Password">
+                    👁️
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.85rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Role:</label>
+                <select id="regRole" class="form-select" style="font-size: 0.9rem;">
+                  <option value="student" selected>🎓 Student / Candidate</option>
+                  <option value="faculty">🛠️ Faculty / Examiner</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 600;">Department / Cohort:</label>
+                <input type="text" id="regDept" class="form-input" value="Computer Science & Engineering" style="font-size: 0.95rem;">
+              </div>
+
+              <div id="regStatusMsg" style="min-height: 22px; font-size: 0.825rem; font-weight: 600; color: #ef4444; margin-bottom: 0.75rem;"></div>
+
+              <button type="submit" id="regSubmitBtn" class="btn btn-primary" style="width: 100%; height: 44px; font-size: 0.95rem; font-weight: 700;">
+                Create Account & Sign In 🎉
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- 1. STUDENT LOBBY / CATALOG VIEW -->
-    <section id="view-student-lobby" class="view-section active">
+    <section id="view-student-lobby" class="view-section">
       <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
         <div>
           <span class="badge badge-cyan" style="margin-bottom: 0.5rem;">Cross-Platform Assessment Engine</span>
@@ -628,6 +756,52 @@
     </div>
   </div>
 
+  <!-- 5. User Profile Modal -->
+  <div id="userProfileModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">👤 User Profile & Credentials</h3>
+        <button class="modal-close" onclick="closeUserProfileModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: var(--shadow-sm);">
+            👤
+          </div>
+          <div style="flex: 1;">
+            <h4 id="profileFullName" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.2rem;">Full Name</h4>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <span id="profileUsername" style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">@username</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">&bull;</span>
+              <span id="profileRole" style="display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3);">STUDENT</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+          <div class="card" style="padding: 0.9rem; background: var(--bg-tertiary);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Department / Program</div>
+            <div id="profileDept" style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">Computer Science</div>
+          </div>
+          <div class="card" style="padding: 0.9rem; background: var(--bg-tertiary);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">System Account ID</div>
+            <div id="profileUserId" style="font-size: 0.85rem; font-family: var(--font-mono); font-weight: 600; color: var(--text-dim); word-break: break-all;">usr-stu-1</div>
+          </div>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-size: 0.825rem; color: var(--accent-success); display: flex; align-items: center; gap: 0.5rem;">
+          <span>🔒</span> Active session authenticated via QuizSphere Access Management.
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-secondary" onclick="closeUserProfileModal()">Close</button>
+        <button class="btn btn-secondary" onclick="handleWebLogout()" style="color: var(--accent-danger); border-color: rgba(239, 68, 68, 0.4);">
+          🚪 Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
@@ -642,6 +816,7 @@
   <script src="./assets/js/quiz-engine.js?v=3.1"></script>
   <script src="./assets/js/examiner.js?v=3.1"></script>
   <script src="./assets/js/certificates.js?v=3.1"></script>
+  <script src="./assets/js/auth.js?v=3.1"></script>
   <script src="./assets/js/app.js?v=3.1"></script>
 </body>
 </html>
