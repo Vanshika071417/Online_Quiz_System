@@ -881,14 +881,14 @@ class OnlineQuizDesktopApp(ctk.CTk):
                     self.tab_admin_btn.configure(fg_color="transparent", text_color=c["text_secondary"], hover_color=c["bg_card_hover"])
         if hasattr(self, "theme_btn"):
             self.theme_btn.configure(
-                text="☀️ Light" if self.current_theme == "light" else "🌙 Dark",
+                text="Light" if self.current_theme == "light" else "Dark",
                 fg_color=c["btn_neutral"],
                 text_color=c["btn_neutral_text"],
                 hover_color=c["btn_neutral_hover"]
             )
         if hasattr(self, "contrast_btn"):
             self.contrast_btn.configure(
-                text="👁️ AAA" if self.high_contrast else "👁️ Contrast",
+                text="AAA" if self.high_contrast else "Contrast",
                 fg_color="#000000" if self.high_contrast else c["btn_neutral"],
                 text_color="#fde047" if self.high_contrast else c["btn_neutral_text"],
                 hover_color=c["btn_neutral_hover"]
@@ -906,7 +906,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         if hasattr(self, "user_chip_btn"):
             self.user_chip_btn.configure(fg_color=c["badge_cyan_bg"], text_color=c["badge_cyan_text"], hover_color=c["bg_card_hover"])
         if hasattr(self, "logout_btn"):
-            self.logout_btn.configure(fg_color="#ef4444", text_color="#ffffff", hover_color="#dc2626")
+            self.logout_btn.configure(fg_color="#dc2626", text_color="#ffffff", hover_color="#b91c1c")
 
     def adjust_font_scale(self, delta):
         new_scale = round(self.font_scale + delta, 2)
@@ -1025,7 +1025,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.tab_candidate_btn = ctk.CTkButton(
             self.nav_tabs_frame,
-            text="🎓 Candidate Arena",
+            text="Candidate Arena",
             font=self.scaled_font(12, weight="bold"),
             fg_color=c["accent_primary"],
             hover_color=c["accent_hover"],
@@ -1038,7 +1038,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.tab_examiner_btn = ctk.CTkButton(
             self.nav_tabs_frame,
-            text="🛠️ Examiner Studio",
+            text="Examiner Studio",
             font=self.scaled_font(12, weight="bold"),
             fg_color="transparent",
             hover_color=c["bg_card_hover"],
@@ -1051,7 +1051,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.tab_admin_btn = ctk.CTkButton(
             self.nav_tabs_frame,
-            text="🛡️ Admin Panel",
+            text="Admin Panel",
             font=self.scaled_font(12, weight="bold"),
             fg_color="transparent",
             hover_color=c["bg_card_hover"],
@@ -1067,8 +1067,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.theme_btn = ctk.CTkButton(
             controls_frame,
-            text="☀️ Light" if self.current_theme == "light" else "🌙 Dark",
-            width=76,
+            text="Light" if self.current_theme == "light" else "Dark",
+            width=68,
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
@@ -1080,8 +1080,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.contrast_btn = ctk.CTkButton(
             controls_frame,
-            text="👁️ Contrast",
-            width=84,
+            text="Contrast",
+            width=76,
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
@@ -1094,7 +1094,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.font_down_btn = ctk.CTkButton(
             controls_frame,
             text="A-",
-            width=38,
+            width=36,
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
@@ -1107,7 +1107,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         self.font_up_btn = ctk.CTkButton(
             controls_frame,
             text="A+",
-            width=38,
+            width=36,
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
@@ -1119,8 +1119,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         self.focus_btn = ctk.CTkButton(
             controls_frame,
-            text="🎯 Focus",
-            width=76,
+            text="Focus",
+            width=68,
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
@@ -1133,7 +1133,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
         # Candidate / User Name Pill
         self.user_chip_btn = ctk.CTkButton(
             controls_frame,
-            text="🔒 Sign In",
+            text="Sign In",
             height=34,
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["badge_cyan_bg"],
@@ -1146,13 +1146,13 @@ class OnlineQuizDesktopApp(ctk.CTk):
         # Sign Out Button
         self.logout_btn = ctk.CTkButton(
             controls_frame,
-            text="🚪 Sign Out",
+            text="Sign Out",
             height=34,
-            width=84,
+            width=78,
             font=self.scaled_font(11, weight="bold"),
-            fg_color="#ef4444",
+            fg_color="#dc2626",
             text_color="#ffffff",
-            hover_color="#dc2626",
+            hover_color="#b91c1c",
             command=self.handle_logout
         )
 
@@ -2987,38 +2987,38 @@ class OnlineQuizDesktopApp(ctk.CTk):
         c = self.get_theme_colors()
 
         scroll = ctk.CTkScrollableFrame(self.workspace, fg_color="transparent", corner_radius=0)
-        scroll.pack(fill="both", expand=True, padx=30, pady=(15, 25))
+        scroll.pack(fill="both", expand=True, padx=25, pady=(15, 25))
 
         # Admin Header
         header_row = ctk.CTkFrame(scroll, fg_color="transparent")
-        header_row.pack(fill="x", pady=(5, 15))
+        header_row.pack(fill="x", pady=(0, 15))
 
         left_hero = ctk.CTkFrame(header_row, fg_color="transparent")
         left_hero.pack(side="left", fill="y", anchor="w")
 
         badge = ctk.CTkLabel(
             left_hero,
-            text="🔒 ENTERPRISE GOVERNANCE & TELEMETRY",
-            font=self.scaled_font(10, weight="bold"),
+            text="ENTERPRISE GOVERNANCE & TELEMETRY",
+            font=self.scaled_font(9, weight="bold"),
             fg_color=c["badge_cyan_bg"],
             text_color=c["badge_cyan_text"],
             corner_radius=4,
             padx=8,
             pady=3
         )
-        badge.pack(anchor="w", pady=(0, 4))
+        badge.pack(anchor="w", pady=(0, 3))
 
         ctk.CTkLabel(
             left_hero,
             text="Platform Administration Console",
-            font=self.scaled_font(24, weight="bold"),
+            font=self.scaled_font(22, weight="bold"),
             text_color=c["text_primary"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             left_hero,
-            text="User governance, candidate assessment performance reports, and diagnostic quiz analytics.",
-            font=self.scaled_font(12),
+            text="Candidate governance, individual scorecard diagnostics, and assessment performance telemetry.",
+            font=self.scaled_font(11),
             text_color=c["text_secondary"]
         ).pack(anchor="w")
 
@@ -3027,53 +3027,56 @@ class OnlineQuizDesktopApp(ctk.CTk):
 
         ctk.CTkButton(
             right_actions,
-            text="📥 Export Roster CSV",
+            text="Export Roster CSV",
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
             text_color=c["btn_neutral_text"],
             hover_color=c["btn_neutral_hover"],
-            height=34,
+            height=32,
+            corner_radius=6,
             command=self.export_admin_users_csv
         ).pack(side="left", padx=4)
 
         ctk.CTkButton(
             right_actions,
-            text="📥 Export Submissions CSV",
+            text="Export Submissions CSV",
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["btn_neutral"],
             text_color=c["btn_neutral_text"],
             hover_color=c["btn_neutral_hover"],
-            height=34,
+            height=32,
+            corner_radius=6,
             command=self.export_admin_submissions_csv
         ).pack(side="left", padx=4)
 
         ctk.CTkButton(
             right_actions,
-            text="🔄 Refresh",
+            text="Refresh",
             font=self.scaled_font(11, weight="bold"),
             fg_color=c["accent_primary"],
             text_color="#ffffff",
             hover_color=c["accent_hover"],
-            height=34,
-            width=80,
+            height=32,
+            width=76,
+            corner_radius=6,
             command=self.render_admin_panel
         ).pack(side="left", padx=4)
 
         # Sub-Navigation Tabs Row
-        subnav_card = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        subnav_card = ctk.CTkFrame(scroll, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
         subnav_card.pack(fill="x", pady=(0, 15))
 
         subnav_inner = ctk.CTkFrame(subnav_card, fg_color="transparent")
-        subnav_inner.pack(fill="x", padx=10, pady=8)
+        subnav_inner.pack(fill="x", padx=8, pady=6)
 
         def switch_sub(sub_id):
             self.admin_sub_view = sub_id
             self.render_admin_panel()
 
         tabs = [
-            ("users", "👥 Candidate & User Governance"),
-            ("quizzes", "📊 Quiz Performance Telemetry"),
-            ("submissions", "📑 Global Submissions Audit Log")
+            ("users", "Candidates & Faculty Roster"),
+            ("quizzes", "Quiz Performance Telemetry"),
+            ("submissions", "Global Submissions Audit Log")
         ]
 
         for tab_id, tab_label in tabs:
@@ -3081,15 +3084,15 @@ class OnlineQuizDesktopApp(ctk.CTk):
             btn = ctk.CTkButton(
                 subnav_inner,
                 text=tab_label,
-                font=self.scaled_font(12, weight="bold" if is_active else "normal"),
+                font=self.scaled_font(11, weight="bold" if is_active else "normal"),
                 fg_color=c["accent_primary"] if is_active else "transparent",
                 text_color="#ffffff" if is_active else c["text_secondary"],
                 hover_color=c["accent_hover"] if is_active else c["bg_card_hover"],
-                height=34,
-                corner_radius=8,
+                height=32,
+                corner_radius=6,
                 command=lambda tid=tab_id: switch_sub(tid)
             )
-            btn.pack(side="left", padx=4)
+            btn.pack(side="left", padx=3)
 
         # Sub-view container
         content_box = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -3115,33 +3118,35 @@ class OnlineQuizDesktopApp(ctk.CTk):
         kpis_row.pack(fill="x", pady=(0, 15))
 
         kpi_defs = [
-            ("TOTAL REGISTERED ACCOUNTS", str(total_users), "Students, Faculty & Admins", c["text_cyan"]),
-            ("ENROLLED CANDIDATES", str(total_students), "Active quiz takers", "#10b981"),
-            ("FACULTY & EXAMINERS", str(total_faculty), "Assessment creators", "#8b5cf6"),
-            ("PROCTOR VIOLATIONS", str(total_violations), "Tab switches & alerts", "#f59e0b" if total_violations > 0 else c["text_secondary"])
+            ("TOTAL ACCOUNTS", str(total_users), "Registered users", c["text_cyan"], "#3b82f6"),
+            ("ACTIVE CANDIDATES", str(total_students), "Enrolled quiz takers", "#10b981", "#10b981"),
+            ("FACULTY EXAMINERS", str(total_faculty), "Assessment creators", "#8b5cf6", "#8b5cf6"),
+            ("PROCTOR ALERTS", str(total_violations), "Recorded infractions", "#f59e0b" if total_violations > 0 else c["text_secondary"], "#f59e0b")
         ]
 
-        for title, val, sub, val_col in kpi_defs:
-            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        for title, val, sub, val_col, stripe_col in kpi_defs:
+            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
             card.pack(side="left", fill="both", expand=True, padx=4)
+            ctk.CTkFrame(card, height=3, fg_color=stripe_col, corner_radius=0).pack(fill="x")
             inner = ctk.CTkFrame(card, fg_color="transparent")
-            inner.pack(fill="both", expand=True, padx=14, pady=12)
+            inner.pack(fill="both", expand=True, padx=14, pady=(8, 12))
             ctk.CTkLabel(inner, text=title, font=self.scaled_font(9, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
-            ctk.CTkLabel(inner, text=val, font=self.scaled_font(22, weight="bold"), text_color=val_col).pack(anchor="w", pady=(2, 0))
+            ctk.CTkLabel(inner, text=val, font=self.scaled_font(24, weight="bold"), text_color=val_col).pack(anchor="w", pady=(1, 0))
             ctk.CTkLabel(inner, text=sub, font=self.scaled_font(10), text_color=c["text_dim"]).pack(anchor="w")
 
         # Filters Card
-        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
-        filter_card.pack(fill="x", pady=(0, 15))
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 12))
         filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
-        filter_inner.pack(fill="x", padx=14, pady=10)
+        filter_inner.pack(fill="x", padx=14, pady=8)
 
-        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(filter_inner, text="Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
         search_entry = ctk.CTkEntry(
             filter_inner,
-            width=220,
-            height=32,
-            placeholder_text="Search name, username, dept...",
+            width=280,
+            height=34,
+            corner_radius=6,
+            placeholder_text="Search name, username, dept, user ID...",
             fg_color=c["bg_card_secondary"],
             text_color=c["text_primary"],
             border_color=c["card_border"],
@@ -3157,7 +3162,8 @@ class OnlineQuizDesktopApp(ctk.CTk):
             filter_inner,
             values=role_options,
             width=130,
-            height=32,
+            height=34,
+            corner_radius=6,
             fg_color=c["bg_card_secondary"],
             button_color=c["btn_neutral"],
             button_hover_color=c["btn_neutral_hover"],
@@ -3170,12 +3176,25 @@ class OnlineQuizDesktopApp(ctk.CTk):
             role_menu.set("All Roles")
         role_menu.pack(side="left", padx=(0, 15))
 
-        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_dim"])
         count_badge.pack(side="right")
 
         # Table Card
-        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
         table_card.pack(fill="both", expand=True)
+
+        cols_spec = [
+            ("#", 45, 0, "w"),
+            ("User ID", 110, 0, "w"),
+            ("Candidate / User Name", 190, 1, "w"),
+            ("Role", 85, 0, "w"),
+            ("Department", 140, 0, "w"),
+            ("Quizzes", 85, 0, "w"),
+            ("Avg Score", 75, 0, "w"),
+            ("Pass Rate", 75, 0, "w"),
+            ("Flags", 65, 0, "w"),
+            ("Action", 95, 0, "w")
+        ]
 
         def render_table():
             for w in table_card.winfo_children():
@@ -3192,71 +3211,83 @@ class OnlineQuizDesktopApp(ctk.CTk):
             if q:
                 filtered = [u for u in filtered if q in u["full_name"].lower() or q in u["username"].lower() or q in u["department"].lower() or q in u["id"].lower()]
 
-            count_badge.configure(text=f"Showing {len(filtered)} of {len(users)} users")
+            count_badge.configure(text=f"Showing {len(filtered)} of {len(users)} accounts")
 
             if not filtered:
                 ctk.CTkLabel(table_card, text="No users matching current filters.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
                 return
 
             # Table Header
-            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0, height=36)
             th.pack(fill="x")
+            th.pack_propagate(False)
 
-            cols = [
-                ("#", 45),
-                ("User ID", 110),
-                ("Candidate / User Name", 170),
-                ("Role", 85),
-                ("Department", 120),
-                ("Quizzes Taken", 95),
-                ("Avg Score", 85),
-                ("Pass Rate", 85),
-                ("Violations", 80),
-                ("Action", 110)
-            ]
-            for col_title, w_val in cols:
-                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+            for col_idx, (col_title, min_w, col_wt, alignment) in enumerate(cols_spec):
+                th.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
+                lbl = ctk.CTkLabel(
+                    th,
+                    text=col_title,
+                    font=self.scaled_font(10, weight="bold"),
+                    text_color=c["text_secondary"],
+                    anchor=alignment
+                )
+                lbl.grid(row=0, column=col_idx, sticky=alignment, padx=6, pady=8)
 
+            # Table Rows
             for idx, u in enumerate(filtered):
-                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0, height=44)
                 row.pack(fill="x")
+                row.pack_propagate(False)
+
+                for col_idx, (_, min_w, col_wt, _) in enumerate(cols_spec):
+                    row.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
 
                 role_str = u["role"].upper()
-                role_col = "#38bdf8" if role_str == "STUDENT" else ("#a855f7" if role_str in ["FACULTY", "TEACHER", "EXAMINER"] else "#f59e0b")
+                role_col = "#0284c7" if role_str == "STUDENT" else ("#8b5cf6" if role_str in ["FACULTY", "TEACHER", "EXAMINER"] else "#d97706")
 
-                ctk.CTkLabel(row, text=f"#{u['user_no']}", font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=45, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=u["id"], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=6, pady=6)
+                # Col 0: #
+                ctk.CTkLabel(row, text=f"#{u['user_no']}", font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=4)
                 
-                name_frame = ctk.CTkFrame(row, fg_color="transparent", width=170)
-                name_frame.pack(side="left", padx=6, pady=4)
-                name_frame.pack_propagate(False)
-                ctk.CTkLabel(name_frame, text=u["full_name"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], anchor="w").pack(fill="x")
-                ctk.CTkLabel(name_frame, text=f"@{u['username']}", font=self.scaled_font(10), text_color=c["text_secondary"], anchor="w").pack(fill="x")
+                # Col 1: ID
+                ctk.CTkLabel(row, text=u["id"], font=self.scaled_font(10), text_color=c["text_dim"], anchor="w").grid(row=0, column=1, sticky="w", padx=6, pady=4)
 
-                ctk.CTkLabel(row, text=role_str, font=self.scaled_font(10, weight="bold"), text_color=role_col, width=85, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=u["department"], font=self.scaled_font(11), text_color=c["text_secondary"], width=120, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=f"{u['total_attempts']} quiz(zes)", font=self.scaled_font(11), text_color=c["text_primary"], width=95, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=f"{u['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
-                
+                # Col 2: Name & Username
+                ctk.CTkLabel(row, text=f"{u['full_name']}\n@{u['username']}", font=self.scaled_font(10, weight="bold"), text_color=c["text_primary"], anchor="w", justify="left").grid(row=0, column=2, sticky="w", padx=6, pady=2)
+
+                # Col 3: Role
+                ctk.CTkLabel(row, text=role_str, font=self.scaled_font(10, weight="bold"), text_color=role_col, anchor="w").grid(row=0, column=3, sticky="w", padx=6, pady=4)
+
+                # Col 4: Department
+                ctk.CTkLabel(row, text=u["department"], font=self.scaled_font(10), text_color=c["text_secondary"], anchor="w").grid(row=0, column=4, sticky="w", padx=6, pady=4)
+
+                # Col 5: Quizzes
+                ctk.CTkLabel(row, text=f"{u['total_attempts']} quiz(zes)", font=self.scaled_font(10), text_color=c["text_primary"], anchor="w").grid(row=0, column=5, sticky="w", padx=6, pady=4)
+
+                # Col 6: Avg Score
+                ctk.CTkLabel(row, text=f"{u['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], anchor="w").grid(row=0, column=6, sticky="w", padx=6, pady=4)
+
+                # Col 7: Pass Rate
                 pr_col = "#10b981" if u["pass_rate"] >= 50 else ("#ef4444" if u["total_attempts"] > 0 else c["text_dim"])
-                ctk.CTkLabel(row, text=f"{u['pass_rate']}%" if u["total_attempts"] > 0 else "-", font=self.scaled_font(11, weight="bold"), text_color=pr_col, width=85, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=f"{u['pass_rate']}%" if u["total_attempts"] > 0 else "-", font=self.scaled_font(10, weight="bold"), text_color=pr_col, anchor="w").grid(row=0, column=7, sticky="w", padx=6, pady=4)
 
+                # Col 8: Violations
                 viol_col = "#ef4444" if u["total_violations"] > 0 else c["text_dim"]
-                ctk.CTkLabel(row, text=str(u["total_violations"]), font=self.scaled_font(11), text_color=viol_col, width=80, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=str(u["total_violations"]), font=self.scaled_font(10), text_color=viol_col, anchor="w").grid(row=0, column=8, sticky="w", padx=6, pady=4)
 
-                btn_box = ctk.CTkFrame(row, fg_color="transparent", width=110)
-                btn_box.pack(side="left", padx=6, pady=4)
-                ctk.CTkButton(
-                    btn_box,
-                    text="📄 Report",
+                # Col 9: Action
+                btn = ctk.CTkButton(
+                    row,
+                    text="View Report",
                     font=self.scaled_font(10, weight="bold"),
                     fg_color=c["badge_cyan_bg"],
                     text_color=c["badge_cyan_text"],
                     hover_color=c["bg_card_hover"],
                     height=26,
                     width=85,
+                    corner_radius=5,
                     command=lambda uid=u["id"]: self.show_admin_user_report_modal(uid)
-                ).pack(side="left")
+                )
+                btn.grid(row=0, column=9, sticky="w", padx=6, pady=8)
 
         search_entry.bind("<KeyRelease>", lambda _: render_table())
         role_menu.configure(command=lambda _: render_table())
@@ -3272,32 +3303,34 @@ class OnlineQuizDesktopApp(ctk.CTk):
         kpis_row.pack(fill="x", pady=(0, 15))
 
         kpi_defs = [
-            ("PUBLISHED ASSESSMENTS", str(kpis.get("total_quizzes", len(quizzes))), "Available on platform", c["text_cyan"]),
-            ("TOTAL QUIZ ATTEMPTS", str(kpis.get("total_attempts", 0)), "Submissions processed", "#38bdf8"),
-            ("SYSTEM PASS RATE", f"{kpis.get('pass_rate', 0)}%", "Overall candidate success", "#10b981"),
-            ("AVERAGE ACCURACY", f"{kpis.get('platform_avg', 0)}%", "Across all quizzes", "#8b5cf6")
+            ("PUBLISHED ASSESSMENTS", str(kpis.get("total_quizzes", len(quizzes))), "Available on platform", c["text_cyan"], "#3b82f6"),
+            ("TOTAL QUIZ ATTEMPTS", str(kpis.get("total_attempts", 0)), "Submissions processed", "#38bdf8", "#0284c7"),
+            ("SYSTEM PASS RATE", f"{kpis.get('pass_rate', 0)}%", "Overall candidate success", "#10b981", "#10b981"),
+            ("AVERAGE ACCURACY", f"{kpis.get('platform_avg', 0)}%", "Across all quizzes", "#8b5cf6", "#8b5cf6")
         ]
 
-        for title, val, sub, val_col in kpi_defs:
-            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        for title, val, sub, val_col, stripe_col in kpi_defs:
+            card = ctk.CTkFrame(kpis_row, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
             card.pack(side="left", fill="both", expand=True, padx=4)
+            ctk.CTkFrame(card, height=3, fg_color=stripe_col, corner_radius=0).pack(fill="x")
             inner = ctk.CTkFrame(card, fg_color="transparent")
-            inner.pack(fill="both", expand=True, padx=14, pady=12)
+            inner.pack(fill="both", expand=True, padx=14, pady=(8, 12))
             ctk.CTkLabel(inner, text=title, font=self.scaled_font(9, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
-            ctk.CTkLabel(inner, text=val, font=self.scaled_font(22, weight="bold"), text_color=val_col).pack(anchor="w", pady=(2, 0))
+            ctk.CTkLabel(inner, text=val, font=self.scaled_font(24, weight="bold"), text_color=val_col).pack(anchor="w", pady=(1, 0))
             ctk.CTkLabel(inner, text=sub, font=self.scaled_font(10), text_color=c["text_dim"]).pack(anchor="w")
 
         # Filters Card
-        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
-        filter_card.pack(fill="x", pady=(0, 15))
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 12))
         filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
-        filter_inner.pack(fill="x", padx=14, pady=10)
+        filter_inner.pack(fill="x", padx=14, pady=8)
 
-        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(filter_inner, text="Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
         search_entry = ctk.CTkEntry(
             filter_inner,
-            width=260,
-            height=32,
+            width=320,
+            height=34,
+            corner_radius=6,
             placeholder_text="Filter assessment title, join code, creator...",
             fg_color=c["bg_card_secondary"],
             text_color=c["text_primary"],
@@ -3308,11 +3341,23 @@ class OnlineQuizDesktopApp(ctk.CTk):
             search_entry.insert(0, self.admin_quiz_search_q)
         search_entry.pack(side="left", padx=(0, 15))
 
-        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_dim"])
         count_badge.pack(side="right")
 
-        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
         table_card.pack(fill="both", expand=True)
+
+        cols_spec = [
+            ("Join Code", 95, 0, "w"),
+            ("Assessment Title", 210, 1, "w"),
+            ("Examiner / Creator", 140, 0, "w"),
+            ("Attempts", 80, 0, "w"),
+            ("Avg Score", 80, 0, "w"),
+            ("Pass Rate", 80, 0, "w"),
+            ("Score Range", 95, 0, "w"),
+            ("Difficulty Diagnosis", 140, 0, "w"),
+            ("Violations", 75, 0, "w")
+        ]
 
         def render_table():
             for w in table_card.winfo_children():
@@ -3331,51 +3376,49 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 ctk.CTkLabel(table_card, text="No assessments found matching search.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
                 return
 
-            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0, height=36)
             th.pack(fill="x")
+            th.pack_propagate(False)
 
-            cols = [
-                ("Join Code", 95),
-                ("Assessment Title", 220),
-                ("Examiner / Creator", 150),
-                ("Attempts", 85),
-                ("Avg Score", 85),
-                ("Pass Rate", 85),
-                ("Score Range", 95),
-                ("Difficulty Diagnosis", 140),
-                ("Violations", 80)
-            ]
-            for col_title, w_val in cols:
-                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+            for col_idx, (col_title, min_w, col_wt, alignment) in enumerate(cols_spec):
+                th.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
+                lbl = ctk.CTkLabel(
+                    th,
+                    text=col_title,
+                    font=self.scaled_font(10, weight="bold"),
+                    text_color=c["text_secondary"],
+                    anchor=alignment
+                )
+                lbl.grid(row=0, column=col_idx, sticky=alignment, padx=6, pady=8)
 
             for idx, qz in enumerate(filtered):
-                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0, height=44)
                 row.pack(fill="x")
+                row.pack_propagate(False)
 
-                ctk.CTkLabel(row, text=qz.get("join_code", "QZ-1001"), font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=95, anchor="w").pack(side="left", padx=6, pady=7)
+                for col_idx, (_, min_w, col_wt, _) in enumerate(cols_spec):
+                    row.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
+
+                ctk.CTkLabel(row, text=qz.get("join_code", "QZ-1001"), font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=4)
                 
-                title_frame = ctk.CTkFrame(row, fg_color="transparent", width=220)
-                title_frame.pack(side="left", padx=6, pady=4)
-                title_frame.pack_propagate(False)
-                ctk.CTkLabel(title_frame, text=qz["title"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], anchor="w").pack(fill="x")
-                ctk.CTkLabel(title_frame, text=f"{qz.get('category', 'Computer Science')} • {qz.get('duration_minutes', 15)}m", font=self.scaled_font(10), text_color=c["text_dim"], anchor="w").pack(fill="x")
+                ctk.CTkLabel(row, text=f"{qz['title']}\n{qz.get('category', 'Computer Science')} • {qz.get('duration_minutes', 15)}m", font=self.scaled_font(10, weight="bold"), text_color=c["text_primary"], anchor="w", justify="left").grid(row=0, column=1, sticky="w", padx=6, pady=2)
 
-                ctk.CTkLabel(row, text=qz.get("teacher_name", "Faculty"), font=self.scaled_font(11), text_color=c["text_secondary"], width=150, anchor="w").pack(side="left", padx=6, pady=7)
-                ctk.CTkLabel(row, text=str(qz["attempts_count"]), font=self.scaled_font(11), text_color=c["text_primary"], width=85, anchor="w").pack(side="left", padx=6, pady=7)
-                ctk.CTkLabel(row, text=f"{qz['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], width=85, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=qz.get("teacher_name", "Faculty"), font=self.scaled_font(10), text_color=c["text_secondary"], anchor="w").grid(row=0, column=2, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=str(qz["attempts_count"]), font=self.scaled_font(10), text_color=c["text_primary"], anchor="w").grid(row=0, column=3, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=f"{qz['avg_score']}%", font=self.scaled_font(11, weight="bold"), text_color=c["text_cyan"], anchor="w").grid(row=0, column=4, sticky="w", padx=6, pady=4)
 
                 pr_col = "#10b981" if qz["pass_rate"] >= 50 else ("#ef4444" if qz["attempts_count"] > 0 else c["text_dim"])
-                ctk.CTkLabel(row, text=f"{qz['pass_rate']}%" if qz["attempts_count"] > 0 else "-", font=self.scaled_font(11, weight="bold"), text_color=pr_col, width=85, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=f"{qz['pass_rate']}%" if qz["attempts_count"] > 0 else "-", font=self.scaled_font(10, weight="bold"), text_color=pr_col, anchor="w").grid(row=0, column=5, sticky="w", padx=6, pady=4)
 
                 range_str = f"{qz['lowest_score']}% - {qz['highest_score']}%" if qz["attempts_count"] > 0 else "N/A"
-                ctk.CTkLabel(row, text=range_str, font=self.scaled_font(10), text_color=c["text_secondary"], width=95, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=range_str, font=self.scaled_font(10), text_color=c["text_secondary"], anchor="w").grid(row=0, column=6, sticky="w", padx=6, pady=4)
 
                 diff_str = qz.get("difficulty", "Balanced")
-                diff_col = "#10b981" if "Beginner" in diff_str else ("#f59e0b" if "Rigorous" in diff_str else "#38bdf8")
-                ctk.CTkLabel(row, text=diff_str, font=self.scaled_font(10, weight="bold"), text_color=diff_col, width=140, anchor="w").pack(side="left", padx=6, pady=7)
+                diff_col = "#10b981" if "Beginner" in diff_str else ("#d97706" if "Rigorous" in diff_str else "#0284c7")
+                ctk.CTkLabel(row, text=diff_str, font=self.scaled_font(10, weight="bold"), text_color=diff_col, anchor="w").grid(row=0, column=7, sticky="w", padx=6, pady=4)
 
                 viol_col = "#ef4444" if qz["total_violations"] > 0 else c["text_dim"]
-                ctk.CTkLabel(row, text=str(qz["total_violations"]), font=self.scaled_font(11), text_color=viol_col, width=80, anchor="w").pack(side="left", padx=6, pady=7)
+                ctk.CTkLabel(row, text=str(qz["total_violations"]), font=self.scaled_font(10), text_color=viol_col, anchor="w").grid(row=0, column=8, sticky="w", padx=6, pady=4)
 
         search_entry.bind("<KeyRelease>", lambda _: render_table())
         render_table()
@@ -3383,17 +3426,18 @@ class OnlineQuizDesktopApp(ctk.CTk):
     def _render_admin_submissions_view(self, container, c):
         all_reports = self.db.get_teacher_reports()
 
-        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
-        filter_card.pack(fill="x", pady=(0, 15))
+        filter_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
+        filter_card.pack(fill="x", pady=(0, 12))
         filter_inner = ctk.CTkFrame(filter_card, fg_color="transparent")
-        filter_inner.pack(fill="x", padx=14, pady=10)
+        filter_inner.pack(fill="x", padx=14, pady=8)
 
-        ctk.CTkLabel(filter_inner, text="🔍 Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(filter_inner, text="Search:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
         search_entry = ctk.CTkEntry(
             filter_inner,
-            width=240,
-            height=32,
-            placeholder_text="Search candidate, assessment title...",
+            width=280,
+            height=34,
+            corner_radius=6,
+            placeholder_text="Search candidate, assessment title, code...",
             fg_color=c["bg_card_secondary"],
             text_color=c["text_primary"],
             border_color=c["card_border"],
@@ -3406,9 +3450,10 @@ class OnlineQuizDesktopApp(ctk.CTk):
         ctk.CTkLabel(filter_inner, text="Result:", font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"]).pack(side="left", padx=(0, 6))
         res_menu = ctk.CTkOptionMenu(
             filter_inner,
-            values=["All Submissions", "Passed", "Failed"],
+            values=["All Submissions", "Passed Only", "Failed Only"],
             width=140,
-            height=32,
+            height=34,
+            corner_radius=6,
             fg_color=c["bg_card_secondary"],
             button_color=c["btn_neutral"],
             button_hover_color=c["btn_neutral_hover"],
@@ -3418,11 +3463,23 @@ class OnlineQuizDesktopApp(ctk.CTk):
         res_menu.set("All Submissions")
         res_menu.pack(side="left", padx=(0, 15))
 
-        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_secondary"])
+        count_badge = ctk.CTkLabel(filter_inner, text="", font=self.scaled_font(11), text_color=c["text_dim"])
         count_badge.pack(side="right")
 
-        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=10, border_width=c["border_width"], border_color=c["card_border"])
+        table_card = ctk.CTkFrame(container, fg_color=c["bg_card"], corner_radius=8, border_width=1, border_color=c["card_border"])
         table_card.pack(fill="both", expand=True)
+
+        cols_spec = [
+            ("Attempt ID", 110, 0, "w"),
+            ("Candidate Name", 160, 0, "w"),
+            ("Assessment Title", 210, 1, "w"),
+            ("Join Code", 85, 0, "w"),
+            ("Score", 75, 0, "w"),
+            ("Percent", 75, 0, "w"),
+            ("Status", 85, 0, "w"),
+            ("Violations", 75, 0, "w"),
+            ("Submitted At", 130, 0, "w")
+        ]
 
         def render_table():
             for w in table_card.winfo_children():
@@ -3433,9 +3490,9 @@ class OnlineQuizDesktopApp(ctk.CTk):
             sel_res = res_menu.get().strip().lower()
 
             filtered = all_reports
-            if sel_res == "passed":
+            if "passed" in sel_res:
                 filtered = [r for r in filtered if r["passed"]]
-            elif sel_res == "failed":
+            elif "failed" in sel_res:
                 filtered = [r for r in filtered if not r["passed"]]
 
             if q:
@@ -3447,39 +3504,41 @@ class OnlineQuizDesktopApp(ctk.CTk):
                 ctk.CTkLabel(table_card, text="No candidate submissions found.", font=self.scaled_font(13), text_color=c["text_secondary"]).pack(pady=40)
                 return
 
-            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0)
+            th = ctk.CTkFrame(table_card, fg_color=c["table_header_bg"], corner_radius=0, height=36)
             th.pack(fill="x")
+            th.pack_propagate(False)
 
-            cols = [
-                ("Attempt ID", 110),
-                ("Candidate Name", 160),
-                ("Assessment Title", 200),
-                ("Join Code", 85),
-                ("Score", 80),
-                ("Percent", 80),
-                ("Status", 95),
-                ("Violations", 85),
-                ("Submitted At", 140)
-            ]
-            for col_title, w_val in cols:
-                ctk.CTkLabel(th, text=col_title, font=self.scaled_font(11, weight="bold"), text_color=c["text_secondary"], width=w_val, anchor="w").pack(side="left", padx=6, pady=8)
+            for col_idx, (col_title, min_w, col_wt, alignment) in enumerate(cols_spec):
+                th.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
+                lbl = ctk.CTkLabel(
+                    th,
+                    text=col_title,
+                    font=self.scaled_font(10, weight="bold"),
+                    text_color=c["text_secondary"],
+                    anchor=alignment
+                )
+                lbl.grid(row=0, column=col_idx, sticky=alignment, padx=6, pady=8)
 
-            for idx, r in enumerate(filtered[:50]):
-                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+            for idx, r in enumerate(filtered[:60]):
+                row = ctk.CTkFrame(table_card, fg_color=c["bg_card"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0, height=40)
                 row.pack(fill="x")
+                row.pack_propagate(False)
+
+                for col_idx, (_, min_w, col_wt, _) in enumerate(cols_spec):
+                    row.grid_columnconfigure(col_idx, weight=col_wt, minsize=min_w)
 
                 passed = r["passed"]
-                ctk.CTkLabel(row, text=r["id"][:12], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=r["studentName"], font=self.scaled_font(11, weight="bold"), text_color=c["text_primary"], width=160, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=r["quizTitle"], font=self.scaled_font(11), text_color=c["text_cyan"], width=200, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=r.get("joinCode", "QZ-1001"), font=self.scaled_font(11, weight="bold"), text_color=c["accent_primary"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=f"{r['score']}/{r['totalQuestions']}", font=self.scaled_font(11), text_color=c["text_primary"], width=80, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=f"{r['percentage']}%", font=self.scaled_font(11, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=80, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text="PASSED 🏆" if passed else "FAILED", font=self.scaled_font(11, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=95, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=r["id"][:12], font=self.scaled_font(10), text_color=c["text_dim"], anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=r["studentName"], font=self.scaled_font(10, weight="bold"), text_color=c["text_primary"], anchor="w").grid(row=0, column=1, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=r["quizTitle"], font=self.scaled_font(10), text_color=c["text_cyan"], anchor="w").grid(row=0, column=2, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=r.get("joinCode", "QZ-1001"), font=self.scaled_font(10, weight="bold"), text_color=c["accent_primary"], anchor="w").grid(row=0, column=3, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=f"{r['score']}/{r['totalQuestions']}", font=self.scaled_font(10), text_color=c["text_primary"], anchor="w").grid(row=0, column=4, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=f"{r['percentage']}%", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", anchor="w").grid(row=0, column=5, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text="PASSED" if passed else "FAILED", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", anchor="w").grid(row=0, column=6, sticky="w", padx=6, pady=4)
 
                 viol = r["cheatViolations"]
-                ctk.CTkLabel(row, text=str(viol), font=self.scaled_font(11), text_color="#ef4444" if viol > 0 else c["text_dim"], width=85, anchor="w").pack(side="left", padx=6, pady=6)
-                ctk.CTkLabel(row, text=(r["submittedAt"] or "")[:16], font=self.scaled_font(10), text_color=c["text_secondary"], width=140, anchor="w").pack(side="left", padx=6, pady=6)
+                ctk.CTkLabel(row, text=str(viol), font=self.scaled_font(10), text_color="#ef4444" if viol > 0 else c["text_dim"], anchor="w").grid(row=0, column=7, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(row, text=(r["submittedAt"] or "")[:16], font=self.scaled_font(9), text_color=c["text_secondary"], anchor="w").grid(row=0, column=8, sticky="w", padx=6, pady=4)
 
         search_entry.bind("<KeyRelease>", lambda _: render_table())
         res_menu.configure(command=lambda _: render_table())
@@ -3503,14 +3562,14 @@ class OnlineQuizDesktopApp(ctk.CTk):
         modal.grab_set()
         modal.configure(fg_color=c["bg_primary"])
 
-        scroll = ctk.CTkScrollableFrame(modal, fg_color=c["bg_card"], corner_radius=14, border_width=c["border_width"], border_color=c["card_border"])
+        scroll = ctk.CTkScrollableFrame(modal, fg_color=c["bg_card"], corner_radius=12, border_width=1, border_color=c["card_border"])
         scroll.pack(fill="both", expand=True, padx=20, pady=20)
 
         # Header Profile
         h_box = ctk.CTkFrame(scroll, fg_color="transparent")
         h_box.pack(fill="x", pady=(0, 15))
 
-        ctk.CTkLabel(h_box, text=f"👤 {u['full_name']}", font=self.scaled_font(20, weight="bold"), text_color=c["text_primary"]).pack(anchor="w")
+        ctk.CTkLabel(h_box, text=u['full_name'], font=self.scaled_font(20, weight="bold"), text_color=c["text_primary"]).pack(anchor="w")
         ctk.CTkLabel(h_box, text=f"@{u['username']} • Role: {u['role'].upper()} • Dept: {u['department']} • ID: {u['id']}", font=self.scaled_font(11), text_color=c["text_secondary"]).pack(anchor="w", pady=(2, 0))
 
         # Metrics Summary Cards
@@ -3518,60 +3577,68 @@ class OnlineQuizDesktopApp(ctk.CTk):
         summary_grid.pack(fill="x", pady=(0, 15))
 
         m_cards = [
-            ("TOTAL QUIZZES", str(s["total_attempts"]), "Completed attempts", c["text_cyan"]),
-            ("AVERAGE ACCURACY", f"{s['avg_score']}%", "Mean platform score", "#8b5cf6"),
-            ("PASS RATE", f"{s['pass_rate']}%", f"{s['passed_attempts']} passed, {s['failed_attempts']} failed", "#10b981"),
-            ("SCORE RANGE", f"{s['lowest_score']}% - {s['highest_score']}%", "Min to Max achieved", c["accent_primary"]),
-            ("PROCTOR ALERTS", str(s["total_violations"]), "Tab switch flags", "#ef4444" if s["total_violations"] > 0 else c["text_secondary"])
+            ("TOTAL QUIZZES", str(s["total_attempts"]), "Completed attempts", c["text_cyan"], "#3b82f6"),
+            ("AVERAGE ACCURACY", f"{s['avg_score']}%", "Mean score", "#8b5cf6", "#8b5cf6"),
+            ("PASS RATE", f"{s['pass_rate']}%", f"{s['passed_attempts']} pass, {s['failed_attempts']} fail", "#10b981", "#10b981"),
+            ("SCORE RANGE", f"{s['lowest_score']}% - {s['highest_score']}%", "Min to Max", c["accent_primary"], c["accent_primary"]),
+            ("PROCTOR ALERTS", str(s["total_violations"]), "Infraction flags", "#ef4444" if s["total_violations"] > 0 else c["text_secondary"], "#ef4444")
         ]
 
-        for m_title, m_val, m_sub, m_col in m_cards:
-            cd = ctk.CTkFrame(summary_grid, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
+        for m_title, m_val, m_sub, m_col, stripe_c in m_cards:
+            cd = ctk.CTkFrame(summary_grid, fg_color=c["bg_card_secondary"], corner_radius=6, border_width=1, border_color=c["card_border"])
             cd.pack(side="left", fill="both", expand=True, padx=3)
+            ctk.CTkFrame(cd, height=2, fg_color=stripe_c, corner_radius=0).pack(fill="x")
             cin = ctk.CTkFrame(cd, fg_color="transparent")
-            cin.pack(fill="both", expand=True, padx=10, pady=8)
+            cin.pack(fill="both", expand=True, padx=8, pady=(6, 8))
             ctk.CTkLabel(cin, text=m_title, font=self.scaled_font(8, weight="bold"), text_color=c["text_secondary"]).pack(anchor="w")
             ctk.CTkLabel(cin, text=m_val, font=self.scaled_font(16, weight="bold"), text_color=m_col).pack(anchor="w")
             ctk.CTkLabel(cin, text=m_sub, font=self.scaled_font(9), text_color=c["text_dim"]).pack(anchor="w")
 
         # Past Attempts Section
-        ctk.CTkLabel(scroll, text="📋 Assessment Attempt History", font=self.scaled_font(13, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(10, 8))
+        ctk.CTkLabel(scroll, text="Assessment Attempt History", font=self.scaled_font(13, weight="bold"), text_color=c["text_primary"]).pack(anchor="w", pady=(10, 8))
 
         if not attempts:
             ctk.CTkLabel(scroll, text="No completed assessments recorded yet for this candidate.", font=self.scaled_font(12), text_color=c["text_secondary"]).pack(pady=30)
         else:
-            tbl = ctk.CTkFrame(scroll, fg_color=c["bg_card_secondary"], corner_radius=8, border_width=1, border_color=c["card_border"])
+            tbl = ctk.CTkFrame(scroll, fg_color=c["bg_card_secondary"], corner_radius=6, border_width=1, border_color=c["card_border"])
             tbl.pack(fill="x", pady=(0, 15))
 
-            th = ctk.CTkFrame(tbl, fg_color=c["table_header_bg"], corner_radius=0)
-            th.pack(fill="x")
-
-            col_defs = [
-                ("Date", 110),
-                ("Assessment Title", 190),
-                ("Join Code", 85),
-                ("Score", 75),
-                ("Percent", 75),
-                ("Result", 85),
-                ("Violations", 75)
+            att_cols = [
+                ("Date", 100, 0, "w"),
+                ("Assessment Title", 200, 1, "w"),
+                ("Join Code", 85, 0, "w"),
+                ("Score", 70, 0, "w"),
+                ("Percent", 70, 0, "w"),
+                ("Result", 80, 0, "w"),
+                ("Flags", 65, 0, "w")
             ]
-            for col_name, col_w in col_defs:
-                ctk.CTkLabel(th, text=col_name, font=self.scaled_font(10, weight="bold"), text_color=c["text_secondary"], width=col_w, anchor="w").pack(side="left", padx=5, pady=6)
+
+            th = ctk.CTkFrame(tbl, fg_color=c["table_header_bg"], corner_radius=0, height=32)
+            th.pack(fill="x")
+            th.pack_propagate(False)
+
+            for c_idx, (col_name, col_w, col_wt, alignment) in enumerate(att_cols):
+                th.grid_columnconfigure(c_idx, weight=col_wt, minsize=col_w)
+                ctk.CTkLabel(th, text=col_name, font=self.scaled_font(9, weight="bold"), text_color=c["text_secondary"], anchor=alignment).grid(row=0, column=c_idx, sticky=alignment, padx=6, pady=6)
 
             for idx, att in enumerate(attempts):
-                r_frame = ctk.CTkFrame(tbl, fg_color=c["bg_card_secondary"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0)
+                r_frame = ctk.CTkFrame(tbl, fg_color=c["bg_card_secondary"] if idx % 2 == 0 else c["table_row_alt"], corner_radius=0, height=36)
                 r_frame.pack(fill="x")
+                r_frame.pack_propagate(False)
+
+                for c_idx, (_, col_w, col_wt, _) in enumerate(att_cols):
+                    r_frame.grid_columnconfigure(c_idx, weight=col_wt, minsize=col_w)
 
                 passed = att["passed"]
-                ctk.CTkLabel(r_frame, text=(att["submitted_at"] or "")[:10], font=self.scaled_font(10), text_color=c["text_dim"], width=110, anchor="w").pack(side="left", padx=5, pady=6)
-                ctk.CTkLabel(r_frame, text=att["quiz_title"], font=self.scaled_font(10, weight="bold"), text_color=c["text_primary"], width=190, anchor="w").pack(side="left", padx=5, pady=6)
-                ctk.CTkLabel(r_frame, text=att.get("join_code", "QZ-1001"), font=self.scaled_font(10, weight="bold"), text_color=c["accent_primary"], width=85, anchor="w").pack(side="left", padx=5, pady=6)
-                ctk.CTkLabel(r_frame, text=f"{att['score']}/{att['total_questions']}", font=self.scaled_font(10), text_color=c["text_primary"], width=75, anchor="w").pack(side="left", padx=5, pady=6)
-                ctk.CTkLabel(r_frame, text=f"{att['percentage']}%", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=75, anchor="w").pack(side="left", padx=5, pady=6)
-                ctk.CTkLabel(r_frame, text="PASS 🏆" if passed else "FAIL", font=self.scaled_font(10, weight="bold"), text_color="#10b981" if passed else "#ef4444", width=85, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=(att["submitted_at"] or "")[:10], font=self.scaled_font(9), text_color=c["text_dim"], anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(r_frame, text=att["quiz_title"], font=self.scaled_font(9, weight="bold"), text_color=c["text_primary"], anchor="w").grid(row=0, column=1, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(r_frame, text=att.get("join_code", "QZ-1001"), font=self.scaled_font(9, weight="bold"), text_color=c["accent_primary"], anchor="w").grid(row=0, column=2, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(r_frame, text=f"{att['score']}/{att['total_questions']}", font=self.scaled_font(9), text_color=c["text_primary"], anchor="w").grid(row=0, column=3, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(r_frame, text=f"{att['percentage']}%", font=self.scaled_font(9, weight="bold"), text_color="#10b981" if passed else "#ef4444", anchor="w").grid(row=0, column=4, sticky="w", padx=6, pady=4)
+                ctk.CTkLabel(r_frame, text="PASS" if passed else "FAIL", font=self.scaled_font(9, weight="bold"), text_color="#10b981" if passed else "#ef4444", anchor="w").grid(row=0, column=5, sticky="w", padx=6, pady=4)
                 
                 viol_c = "#ef4444" if att["cheat_violations"] > 0 else c["text_dim"]
-                ctk.CTkLabel(r_frame, text=str(att["cheat_violations"]), font=self.scaled_font(10), text_color=viol_c, width=75, anchor="w").pack(side="left", padx=5, pady=6)
+                ctk.CTkLabel(r_frame, text=str(att["cheat_violations"]), font=self.scaled_font(9), text_color=viol_c, anchor="w").grid(row=0, column=6, sticky="w", padx=6, pady=4)
 
         ctk.CTkButton(
             scroll,
@@ -3582,6 +3649,7 @@ class OnlineQuizDesktopApp(ctk.CTk):
             hover_color=c["btn_neutral_hover"],
             height=32,
             width=100,
+            corner_radius=6,
             command=modal.destroy
         ).pack(anchor="e", pady=(10, 0))
 
