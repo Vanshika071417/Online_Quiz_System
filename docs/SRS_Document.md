@@ -234,6 +234,10 @@ Online_Quiz_System/
 
 ### 8.1 Entity-Relationship (ER) Schema
 
+![QuizSphere Pro ER Diagram](./assets/er_diagram.png)
+
+> 📖 **Comprehensive Data Dictionary:** For the complete modular multi-tenant architecture, monotonic answer revision policies, and forensic outbox tables, refer to the dedicated [Entity-Relationship Architecture Guide](file:///c:/Users/piyush/Documents/Online_Quiz_System/docs/ER_DIAGRAM.md).
+
 ```mermaid
 erDiagram
     USERS ||--o{ ATTEMPTS : "submits"
