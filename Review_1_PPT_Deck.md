@@ -1,4 +1,4 @@
-# Presentation Deck & Speaker Notes
+# Complete Presentation Deck & Speaker Notes (14 Slides)
 ## Online Quiz System (QuizSphere Pro) — Review 1: Setup & SRS
 
 **PowerPoint File Generated:** [`QuizSphere_Review_1_Presentation.pptx`](file:///c:/Users/piyush/Documents/Online_Quiz_System/QuizSphere_Review_1_Presentation.pptx)  
@@ -10,11 +10,11 @@
 
 ### Slide 1: Title Slide
 - **Title:** Online Quiz System (QuizSphere Pro)
-- **Subtitle:** Setup & Software Requirements Specification (SRS) — Review 1
+- **Subtitle:** Setup & Software Requirements Specification (SRS) with Working Demo
 - **Metadata Cards:**
-  - *Course & Topic:* BBAT104: Fundamentals of TQM | Baseline System 9: Online Quiz System
+  - *Course & Baseline:* BBAT104: Fundamentals of TQM | Baseline System 9: Online Quiz System
   - *Assigned Quality Goal:* Q20: Overall Software Quality (Dashboards, Validation, Reports, Backups, Role Controls)
-  - *Core Engineering Target:* Zero-Latency Submissions (<250ms), Deterministic Zero-Defect Auto-Grading
+  - *Engineering Target:* Zero-Latency Submissions (<250ms), Deterministic Zero-Defect Auto-Grading
   - *Dual Architecture:* FastAPI Unified Web Backend (SPA) + CustomTkinter Windows Desktop Client
 - **Speaker Talking Points:**
   > "Good morning, respected evaluators. Today, we present Review 1 of our project: the **Online Quiz System (QuizSphere Pro)**. Our objective under TQM Baseline System 9 is to engineer a multi-platform assessment system with zero-latency grading, active proctoring, and complete role-segregated governance."
@@ -32,8 +32,6 @@
   2. *Anti-Cheat Proctoring Hub:* Continuous window focus loss and tab-switch telemetry increments violation counters and logs timestamps in real time.
   3. *AI Curriculum Question Synthesis:* Faculty input syllabus keywords to automatically generate verified MCQs with rationale keys in seconds.
   4. *Dual Platform Parity:* Simultaneous access via responsive Web browser SPA (FastAPI) and native standalone Windows Desktop App (CustomTkinter).
-- **Speaker Talking Points:**
-  > "Traditional online assessment tools suffer from submission freezes during peak loads and lack proctoring. We addressed these core problems by building an in-memory grading engine that delivers scores in ~25ms, paired with client-side anti-cheat tracking and an AI question generator."
 
 ---
 
@@ -50,8 +48,6 @@
 - **CTQ Metric 4 — Data Recovery (RPO):**
   - *Target Specification:* Hourly automated database backups & on-demand snapshots
   - *Achieved Benchmark:* Automated timestamped SQLite backups in `backups/` directory
-- **Speaker Talking Points:**
-  > "Under our assigned TQM goal Q20, we established strict Critical-to-Quality (CTQ) specifications. We have exceeded our performance benchmark: submissions grade in ~25ms versus our 250ms target, with 100% accuracy and automated database backup routines."
 
 ---
 
@@ -73,12 +69,45 @@
   - User governance roster with search and role filters.
   - Candidate Performance Scorecard drill-down modal.
   - Instant CSV exports for rosters and complete audit logs.
-- **Speaker Talking Points:**
-  > "The system enforces strict Role-Based Access Control across three segregated portals. Students see only the Candidate Arena, teachers get the Examiner Studio, and administrators access system telemetry and CSV exports."
 
 ---
 
-### Slide 5: Modular Folder Architecture & Technology Stack
+### Slide 5: Software Requirements Specification (SRS) — Architecture & Scope
+- **IEEE 830 Standard Structure:**
+  - Complete formal specification documented in `docs/SRS_Document.md`.
+  - Multi-tenant data isolation, security controls, and audit trails.
+  - Integration with TQM Q20 (Overall Software Quality mandate).
+- **System Boundaries & Actors:**
+  - Primary Actors: Students (Examinees), Faculty (Examiners), Administrators.
+  - Dual Client Channels: Web Browser (HTML5/CSS3) & Windows Desktop GUI.
+  - Communication Protocol: High-throughput JSON REST APIs + WebSockets.
+  - Storage Engine: Transactional ACID-compliant SQLite instance.
+- **Poka-Yoke Mistake-Proofing:**
+  - Validation Layer: Eliminates malformed question inputs and bad boundaries.
+  - Schema Guards: Pydantic v2 strict models for all request bodies.
+  - Join Code Integrity: Unique constraint locks preventing collisions.
+  - Deterministic State: In-memory evaluation removing race conditions.
+
+---
+
+### Slide 6: SRS: Functional Requirements Matrix (FR-1 to FR-5)
+- **FR-1: Multi-Role Dashboards:** Segregated workspaces for Student, Faculty, and Admin with dynamic navigation visibility based on authenticated role.
+- **FR-2: Poka-Yoke Input Validation:** Strict bounds checking on quiz limits (1–180m, 1–100%), non-empty options, and unique constraint enforcement on Join Codes.
+- **FR-3: AI Question Synthesis:** Automated MCQ synthesis based on syllabus topic and difficulty (Beginner, Medium, Advanced) with deterministic answer keys.
+- **FR-4: Automated Gradebook & Export:** Instant candidate scorecard delivery with per-question review and one-click streaming CSV exports for rosters and attempts.
+- **FR-5: Automated Database Backups:** Dedicated backup utility creating timestamped SQLite snapshots in `backups/` directory with on-demand snapshot triggers.
+
+---
+
+### Slide 7: SRS: Non-Functional Requirements & Security Safeguards
+- **Sub-250ms Deterministic Speed:** In-memory evaluation pipeline yields immediate grading without blocking I/O (measured at 15–35ms).
+- **ACID Transaction Guarantee:** Atomic SQLite write transactions protect test records from corrupt state; automatic database migrations on boot via FastAPI lifespan handlers.
+- **Active Proctoring & Integrity:** Window blur & tab switch listeners capture unauthorized browser browsing; infraction tally permanently attached to candidate attempt record.
+- **Theming & Accessibility:** Warm Cream Modern Theme + High-Contrast Dark Mode; dynamic font scaling controls (`A+`/`A-`) for laboratory accessibility.
+
+---
+
+### Slide 8: Modular Folder Architecture & Technology Stack
 - **Backend Core (FastAPI + Uvicorn + SQLite):**
   - `server.py`: Unified REST API, WebSocket hub, and static SPA server.
   - `backend/api/v1/`: Versioned routers (`auth`, `quizzes`, `attempts`, `results`, `admin`).
@@ -95,12 +124,10 @@
   - `assets/js/`: Segregated controllers (`auth.js`, `quiz-engine.js`, `examiner.js`, `admin.js`).
 - **Quality & Automated Test Suite (Pytest):**
   - 22 automated unit tests across `tests/` verifying all authentication, admin KPI, quiz code, and architecture contracts.
-- **Speaker Talking Points:**
-  > "Our codebase is structured modularly. The backend uses FastAPI with SQLite, the frontend uses a responsive vanilla CSS design system, and the desktop app is built with CustomTkinter. All 22 automated tests are passing with 100% success."
 
 ---
 
-### Slide 6: Core Modules & Feature Breakdown
+### Slide 9: Core Modules & Feature Breakdown
 - **M1: Identity & Authentication:** Secure sign-in and registration with dynamic navigation tab filtering.
 - **M2: Examiner Studio & AI Wizard:** Manual question authoring or AI syllabus synthesis with 6-character Join Code generation.
 - **M3: Candidate Assessment Arena:** Quick test access via join code with authoritative countdown timer and question palette.
@@ -110,7 +137,7 @@
 
 ---
 
-### Slide 7: Database & System Design
+### Slide 10: Database & System Design
 - **Relational Tables in SQLite (`quiz_system.db`):**
   - `users`: User identity, hashed credentials, role, department, and timestamps.
   - `quizzes`: Quiz metadata, unique join codes (`QZ-XXXX`), duration, passing scores, and serialized JSON questions.
@@ -123,17 +150,7 @@
 
 ---
 
-### Slide 8: Initial UI & System Workflow
-1. **Authenticate:** User logs in as Student, Faculty, or Admin; navigation adapts immediately.
-2. **Create Quiz:** Faculty authors a quiz manually or uses the AI generator; server assigns a unique Join Code (e.g., `QZ-4821`).
-3. **Enter Code:** Student enters the 6-character code; questions load in <25ms.
-4. **Take & Monitor:** Authoritative countdown timer runs; anti-cheat tracks window blur and tab switching.
-5. **Auto-Grade:** Student submits test; server evaluates answers in ~25ms and displays full scorecard.
-6. **Audit & Export:** Faculty inspects class gradebook; Admin reviews platform telemetry and exports CSV reports.
-
----
-
-### Slide 9: CRUD Operations Aligned with Quality Goals
+### Slide 11: CRUD Operations Aligned with Quality Goals
 - **User Management:** Create (Register), Read (Authenticate & Roster), Update (Profile & Accommodations), Delete (Soft-deactivate).
 - **Assessment Management:** Create (Manual/AI), Read (Join Code Lookup & Listings), Update (Time Limits & Questions), Delete (Archive).
 - **Submissions & Audit:** Create (Submit Test), Read (Gradebook & Scorecard), Update (Autosave Progress), Delete (Retention Purge).
@@ -141,21 +158,41 @@
 
 ---
 
-### Slide 10: Working Application & Live Demonstration
-- **Web Application Demo:**
-  - Start command: `python server.py` (Accessible at `http://localhost:8000`).
-  - Demonstrate candidate exam via Join Code `QZ-1001` with anti-cheat detection and immediate scorecard.
-  - Demonstrate teacher AI quiz generation and class gradebook.
-  - Demonstrate admin platform telemetry and CSV downloads.
-- **Desktop Application Demo:**
-  - Start command: `python desktop_app.py` (Native Windows Standalone GUI).
-  - Demonstrate desktop authentication dialog and role-based tab switching.
-  - Demonstrate pixel-perfect grid tables with candidate scorecard drill-down modal.
-  - Demonstrate theme switching (Cream / Dark) and font scaling controls.
+### Slide 12: Working Application Demo Guide — Setup & Test Credentials
+- **Execution & Verification Commands:**
+  1. *Launch Web Server:* `python server.py` (Binds to `http://localhost:8000` with lifespan initialization and reload).
+  2. *Launch Desktop GUI:* `python desktop_app.py` (Native Windows CustomTkinter application).
+  3. *Run Automated Tests:* `python -m pytest tests/ -v` (Runs all 22 tests verifying auth, codes, and telemetry).
+- **Ready-to-Use Test Accounts:**
+  - *Student:* `student` / `student123` (Alex Mercer) — Candidate Arena test entry & anti-cheat demo.
+  - *Faculty:* `faculty` / `faculty123` (Prof. Alan Turing) — AI quiz generator & class gradebook demo.
+  - *Admin:* `admin` / `admin123` (System Administrator) — Telemetry KPIs, student history modal & CSV exports.
 
 ---
 
-### Slide 11: Summary & Review 2 Roadmap
+### Slide 13: Live Demonstration Walkthroughs (Student, Faculty, Admin)
+- **Scenario 1: Student Examination Walkthrough:**
+  1. Sign in as `student` / `student123`; navigation tabs restrict to Candidate Arena.
+  2. Enter active Join Code `QZ-1001` and launch assessment.
+  3. Answer questions while authoritative countdown timer runs.
+  4. Switch browser tabs to trigger live Anti-Cheat violation alert.
+  5. Submit test; zero-latency auto-grading delivers scorecard in ~25ms.
+- **Scenario 2: Faculty Studio & AI Walkthrough:**
+  1. Sign in as `faculty` / `faculty123`; Examiner Studio is front and center.
+  2. Open AI Question Generator, enter topic `"Data Structures"`, click Generate.
+  3. Set passing score to 70%, 15m duration, click Publish Quiz.
+  4. System creates new 6-char Join Code (e.g. `QZ-3942`).
+  5. Open Class Gradebook to inspect student attempts and proctor violation counts.
+- **Scenario 3: Admin Governance Walkthrough:**
+  1. Sign in as `admin` / `admin123`; open Platform Administration Console.
+  2. Inspect high-level KPIs (Total accounts, candidates, faculty, violations).
+  3. Filter user roster table by role or search string `"Alex Mercer"`.
+  4. Click `"View Report"` on candidate to open historical performance modal.
+  5. Click `"Export Roster CSV"` & `"Export Submissions CSV"` for audit reports.
+
+---
+
+### Slide 14: Review 1 Deliverables Summary & Next Steps
 - **Review 1 Deliverables Met:**
   - Problem statement, quality goals, and baseline understanding completed.
   - Comprehensive IEEE 830 Software Requirements Specification (SRS) created.

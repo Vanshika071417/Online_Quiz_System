@@ -1,6 +1,8 @@
 """
 Generate a professional, high-impact PowerPoint presentation (.pptx)
 for Review 1: Setup & SRS (Online Quiz System - QuizSphere Pro).
+Includes comprehensive Software Requirements Specification (SRS) and
+Working Application Demo Guide slides.
 """
 
 import os
@@ -12,29 +14,31 @@ from pptx.enum.shapes import MSO_SHAPE
 
 def create_deck():
     prs = Presentation()
-    # 16:9 Widescreen dimensions
+    # 16:9 Widescreen dimensions (13.333" x 7.5")
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
     blank_layout = prs.slide_layouts[6]
 
-    # Color Palette
-    BG_COLOR = RGBColor(15, 23, 42)         # #0f172a Dark Slate
+    # Harmonious Design Palette
+    BG_COLOR = RGBColor(15, 23, 42)         # #0f172a Dark Slate Navy
     CARD_BG = RGBColor(30, 41, 59)          # #1e293b Container Slate
     CARD_BORDER = RGBColor(51, 65, 85)      # #334155
-    ACCENT_BLUE = RGBColor(59, 130, 246)    # #3b82f6 Primary Blue
+    ACCENT_BLUE = RGBColor(59, 130, 246)    # #3b82f6 Primary Electric Blue
     ACCENT_GREEN = RGBColor(16, 185, 129)   # #10b981 Emerald
-    ACCENT_AMBER = RGBColor(245, 158, 11)   # #f59e0b Amber
-    ACCENT_PURPLE = RGBColor(139, 92, 246)  # #8b5cf6 Purple
-    TEXT_LIGHT = RGBColor(255, 255, 255)    # White
+    ACCENT_AMBER = RGBColor(245, 158, 11)   # #f59e0b Warm Amber
+    ACCENT_PURPLE = RGBColor(139, 92, 246)  # #8b5cf6 Royal Violet
+    ACCENT_CYAN = RGBColor(14, 165, 233)    # #0ea5e9 Cyan
+    ACCENT_RED = RGBColor(239, 68, 68)      # #ef4444 Crimson
+    TEXT_LIGHT = RGBColor(255, 255, 255)    # Pure White
     TEXT_MUTED = RGBColor(203, 213, 225)    # #cbd5e1 Light Slate
-    TEXT_DIM = RGBColor(148, 163, 184)      # #94a3b8 Dim
+    TEXT_DIM = RGBColor(148, 163, 184)      # #94a3b8 Slate Dim
 
     def apply_background(slide):
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, prs.slide_height)
         bg.fill.solid()
         bg.fill.fore_color.rgb = BG_COLOR
-        bg.line.fill.background() # No border
+        bg.line.fill.background()
         return bg
 
     def add_header(slide, title_text, category_text="REVIEW 1 — SETUP & SRS"):
@@ -78,8 +82,7 @@ def create_deck():
     s1 = prs.slides.add_slide(blank_layout)
     apply_background(s1)
 
-    # Accent decorative banner
-    banner = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.2), Inches(1.8), Inches(0.35))
+    banner = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.2), Inches(2.2), Inches(0.35))
     banner.fill.solid()
     banner.fill.fore_color.rgb = ACCENT_BLUE
     banner.line.fill.background()
@@ -90,7 +93,6 @@ def create_deck():
     p_b.font.color.rgb = TEXT_LIGHT
     p_b.alignment = PP_ALIGN.CENTER
 
-    # Main Title
     t_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.7), Inches(11.5), Inches(1.5))
     tf1 = t_box.text_frame
     tf1.word_wrap = True
@@ -101,17 +103,16 @@ def create_deck():
     p1.font.color.rgb = TEXT_LIGHT
 
     p1_sub = tf1.add_paragraph()
-    p1_sub.text = "Setup & Software Requirements Specification (SRS)"
+    p1_sub.text = "Setup & Software Requirements Specification (SRS) with Working Demo"
     p1_sub.font.size = Pt(20)
     p1_sub.font.color.rgb = ACCENT_BLUE
     p1_sub.space_before = Pt(8)
 
-    # Metadata Cards
     cards_data = [
-        ("Course & Project Topic", "BBAT104: Fundamentals of TQM\nBaseline System 9: Online Quiz System", ACCENT_BLUE),
+        ("Course & Baseline", "BBAT104: Fundamentals of TQM\nBaseline System 9: Online Quiz System", ACCENT_BLUE),
         ("Assigned Quality Goal", "Q20: Overall Software Quality\nDashboards, Validation, Export & Backups", ACCENT_GREEN),
-        ("Core Engineering Target", "Zero-Latency Submissions (<250ms)\nDeterministic Zero-Defect Auto-Grading", ACCENT_AMBER),
-        ("Implementation Parity", "FastAPI Unified Web Backend + SPA\nNative CustomTkinter Desktop Client", ACCENT_PURPLE)
+        ("Engineering Target", "Zero-Latency Submissions (<250ms)\n100% Deterministic Auto-Grading", ACCENT_AMBER),
+        ("Dual Platform Deployment", "FastAPI Unified Web Backend + SPA\nNative CustomTkinter Desktop Client", ACCENT_PURPLE)
     ]
 
     for i, (head, val, col) in enumerate(cards_data):
@@ -139,8 +140,7 @@ def create_deck():
     apply_background(s2)
     add_header(s2, "Problem Statement & Baseline Understanding")
 
-    # Left Card: The Problem
-    add_card(s2, Inches(0.8), Inches(1.8), Inches(5.6), Inches(4.9), stripe_color=RGBColor(239, 68, 68))
+    add_card(s2, Inches(0.8), Inches(1.8), Inches(5.6), Inches(4.9), stripe_color=ACCENT_RED)
     b2_left = s2.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.2), Inches(4.5))
     tf2_l = b2_left.text_frame
     tf2_l.word_wrap = True
@@ -149,7 +149,7 @@ def create_deck():
     p.text = "CRITICAL LIMITATIONS IN EXISTING SYSTEMS"
     p.font.size = Pt(12)
     p.font.bold = True
-    p.font.color.rgb = RGBColor(239, 68, 68)
+    p.font.color.rgb = ACCENT_RED
     p.space_after = Pt(12)
 
     problems = [
@@ -170,7 +170,6 @@ def create_deck():
         pd.font.size = Pt(10)
         pd.font.color.rgb = TEXT_MUTED
 
-    # Right Card: The Solution (QuizSphere Pro)
     add_card(s2, Inches(6.8), Inches(1.8), Inches(5.7), Inches(4.9), stripe_color=ACCENT_GREEN)
     b2_right = s2.shapes.add_textbox(Inches(7.0), Inches(2.0), Inches(5.3), Inches(4.5))
     tf2_r = b2_right.text_frame
@@ -208,7 +207,6 @@ def create_deck():
     apply_background(s3)
     add_header(s3, "Quality Objectives & TQM Critical-to-Quality (CTQ)")
 
-    # 4 CTQ Metric Cards
     ctqs = [
         ("SUBMISSION LATENCY", "< 250 ms", "Achieved: ~25 ms", "Turnaround time from student submission to verified database scorecard.", ACCENT_BLUE),
         ("GRADING ACCURACY", "100.0%", "Zero Defect", "Scoring consistency between expected cryptographic key and calculated result.", ACCENT_GREEN),
@@ -307,11 +305,151 @@ def create_deck():
             pp.space_before = Pt(4)
 
     # ==========================================
-    # SLIDE 5: Modular Folder Architecture
+    # SLIDE 5: SRS Overview & IEEE 830 Architecture
     # ==========================================
     s5 = prs.slides.add_slide(blank_layout)
     apply_background(s5)
-    add_header(s5, "Modular Folder Architecture & Technology Stack")
+    add_header(s5, "Software Requirements Specification (SRS) — Architecture & Scope")
+
+    srs_cards = [
+        ("IEEE 830 STANDARD STRUCTURE", ACCENT_BLUE, [
+            "Formal specification covering Functional & Non-Functional criteria",
+            "Document: docs/SRS_Document.md (Version 1.0.0)",
+            "Multi-tenant data isolation and audit trails",
+            "Integration with TQM Q20 (Overall Software Quality mandate)"
+        ]),
+        ("SYSTEM BOUNDARIES & ACTORS", ACCENT_GREEN, [
+            "Primary Actors: Students (Examinees), Faculty (Examiners), Admins",
+            "Client Channels: Web Browser (HTML5/CSS3) & Windows Desktop GUI",
+            "Communication: High-throughput JSON REST APIs + WebSockets",
+            "Storage Engine: Transactional ACID-compliant SQLite instance"
+        ]),
+        ("POKA-YOKE MISTAKE PROOFING", ACCENT_AMBER, [
+            "Validation Layer: Eliminates malformed question inputs and bad boundaries",
+            "Schema Guards: Pydantic v2 strict models for all request bodies",
+            "Join Code Integrity: Unique constraint locks preventing collisions",
+            "Deterministic State: In-memory evaluation removing race conditions"
+        ])
+    ]
+
+    for i, (title, col, items) in enumerate(srs_cards):
+        c_left = Inches(0.8 + i * 3.95)
+        add_card(s5, c_left, Inches(1.8), Inches(3.8), Inches(4.9), stripe_color=col)
+        box = s5.shapes.add_textbox(c_left + Inches(0.2), Inches(2.0), Inches(3.4), Inches(4.5))
+        tf = box.text_frame
+        tf.word_wrap = True
+
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = col
+        p.space_after = Pt(10)
+
+        for it in items:
+            pi = tf.add_paragraph()
+            pi.text = f"• {it}"
+            pi.font.size = Pt(10)
+            pi.font.color.rgb = TEXT_LIGHT
+            pi.space_before = Pt(6)
+
+    # ==========================================
+    # SLIDE 6: SRS Functional Requirements Matrix
+    # ==========================================
+    s6 = prs.slides.add_slide(blank_layout)
+    apply_background(s6)
+    add_header(s6, "SRS: Functional Requirements Matrix (FR-1 to FR-5)")
+
+    frs = [
+        ("FR-1: Multi-Role Dashboards", "Segregated workspaces for Student, Faculty, and Admin with dynamic navigation visibility based on authenticated role.", ACCENT_BLUE),
+        ("FR-2: Poka-Yoke Input Validation", "Strict bounds checking on quiz limits (1-180m, 1-100%), non-empty options, and unique constraint enforcement on Join Codes.", ACCENT_GREEN),
+        ("FR-3: AI Question Synthesis", "Automated MCQ synthesis based on syllabus topic and difficulty (Beginner, Medium, Advanced) with deterministic answer keys.", ACCENT_AMBER),
+        ("FR-4: Automated Gradebook & Export", "Instant candidate scorecard delivery with per-question review and one-click streaming CSV exports for rosters and attempts.", ACCENT_PURPLE),
+        ("FR-5: Automated Database Backups", "Dedicated backup utility creating timestamped SQLite snapshots in backups/ directory with on-demand snapshot triggers.", ACCENT_CYAN)
+    ]
+
+    for i, (f_title, f_desc, col) in enumerate(frs):
+        row = i // 3
+        col_idx = i % 3
+        c_left = Inches(0.8 + col_idx * 3.95)
+        c_top = Inches(1.8 + row * 2.55)
+        add_card(s6, c_left, c_top, Inches(3.8), Inches(2.35), stripe_color=col)
+        box = s6.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(3.4), Inches(2.0))
+        tf = box.text_frame
+        tf.word_wrap = True
+
+        p = tf.paragraphs[0]
+        p.text = f_title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = col
+        p.space_after = Pt(6)
+
+        pd = tf.add_paragraph()
+        pd.text = f_desc
+        pd.font.size = Pt(9.5)
+        pd.font.color.rgb = TEXT_MUTED
+
+    # ==========================================
+    # SLIDE 7: SRS Non-Functional Requirements & Security
+    # ==========================================
+    s7 = prs.slides.add_slide(blank_layout)
+    apply_background(s7)
+    add_header(s7, "SRS: Non-Functional Requirements & Security Safeguards")
+
+    nfrs = [
+        ("SUB-250MS DETERMINISTIC SPEED", ACCENT_BLUE, [
+            "In-memory evaluation pipeline yields immediate grading without blocking I/O",
+            "Benchmark: 15 to 35 milliseconds turnaround per 50-question test",
+            "Zero client-side grading drift or race condition vulnerabilities"
+        ]),
+        ("ACID TRANSACTION GUARANTEE", ACCENT_GREEN, [
+            "Atomic SQLite write transactions protect test records from corrupt state",
+            "Automatic database migrations on boot via FastAPI lifespan handlers",
+            "Zero startup deprecation warnings across all endpoints"
+        ]),
+        ("ACTIVE PROCTORING & INTEGRITY", ACCENT_RED, [
+            "Window blur & tab switch listeners capture unauthorized browser browsing",
+            "Infraction tally permanently attached to candidate attempt record",
+            "Authoritative server-side countdown timer preventing client manipulation"
+        ]),
+        ("THEMING & ACCESSIBILITY", ACCENT_PURPLE, [
+            "Warm Cream Modern Theme + High-Contrast Dark Mode",
+            "Dynamic font scaling controls (A+/A-) for laboratory accessibility",
+            "Focus Mode minimizing visual clutter during high-stakes assessments"
+        ])
+    ]
+
+    for i, (title, col, items) in enumerate(nfrs):
+        row = i // 2
+        col_idx = i % 2
+        c_left = Inches(0.8 + col_idx * 5.95)
+        c_top = Inches(1.8 + row * 2.55)
+        add_card(s7, c_left, c_top, Inches(5.7), Inches(2.35), stripe_color=col)
+        box = s7.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(5.3), Inches(2.0))
+        tf = box.text_frame
+        tf.word_wrap = True
+
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = col
+        p.space_after = Pt(4)
+
+        for it in items:
+            pi = tf.add_paragraph()
+            pi.text = f"▪ {it}"
+            pi.font.size = Pt(9.5)
+            pi.font.color.rgb = TEXT_LIGHT
+            pi.space_before = Pt(2)
+
+    # ==========================================
+    # SLIDE 8: Modular Folder Architecture
+    # ==========================================
+    s8 = prs.slides.add_slide(blank_layout)
+    apply_background(s8)
+    add_header(s8, "Modular Folder Architecture & Technology Stack")
 
     arch_sections = [
         ("BACKEND CORE", "FastAPI + Uvicorn + SQLite", [
@@ -348,8 +486,8 @@ def create_deck():
         col_idx = i % 2
         c_left = Inches(0.8 + col_idx * 5.95)
         c_top = Inches(1.8 + row * 2.55)
-        add_card(s5, c_left, c_top, Inches(5.7), Inches(2.35), stripe_color=col)
-        box = s5.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(5.3), Inches(2.0))
+        add_card(s8, c_left, c_top, Inches(5.7), Inches(2.35), stripe_color=col)
+        box = s8.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(5.3), Inches(2.0))
         tf = box.text_frame
         tf.word_wrap = True
 
@@ -374,19 +512,19 @@ def create_deck():
             pi.space_before = Pt(1)
 
     # ==========================================
-    # SLIDE 6: Modules and Features
+    # SLIDE 9: Core Modules Breakdown
     # ==========================================
-    s6 = prs.slides.add_slide(blank_layout)
-    apply_background(s6)
-    add_header(s6, "Core Modules & Feature Breakdown")
+    s9 = prs.slides.add_slide(blank_layout)
+    apply_background(s9)
+    add_header(s9, "Core Modules & Feature Breakdown")
 
     modules = [
         ("M1: Identity & Authentication", "Role-based sign-in and registration for Student, Faculty, and Admin. Dynamically alters client navigation tabs according to authenticated persona.", ACCENT_BLUE),
         ("M2: Examiner Studio & AI Wizard", "Faculty test creator supporting manual MCQ authoring or AI syllabus synthesis. Configures duration, passing score, category, and deterministic 6-character Join Code.", ACCENT_GREEN),
         ("M3: Candidate Assessment Arena", "Quick test join via code. Delivers questions with interactive palette, authoritative server countdown timer, and automatic submission upon deadline expiry.", ACCENT_AMBER),
-        ("M4: Anti-Cheat Proctoring Hub", "Active focus tracking monitors window blur and tab switching during exams. Violations increment in real time and are permanently audited into submission records.", RGBColor(239, 68, 68)),
+        ("M4: Anti-Cheat Proctoring Hub", "Active focus tracking monitors window blur and tab switching during exams. Violations increment in real time and are permanently audited into submission records.", ACCENT_RED),
         ("M5: Zero-Latency Auto-Grading", "In-memory evaluation engine compares answers against key in ~25ms. Displays immediate percentage, pass/fail status, and per-question rationale explanations.", ACCENT_PURPLE),
-        ("M6: Admin Governance & Telemetry", "Platform telemetry KPIs, filterable user roster, candidate performance scorecard drill-down modal, and instant one-click CSV export streams.", RGBColor(14, 165, 233))
+        ("M6: Admin Governance & Telemetry", "Platform telemetry KPIs, filterable user roster, candidate performance scorecard drill-down modal, and instant one-click CSV export streams.", ACCENT_CYAN)
     ]
 
     for i, (m_title, m_desc, col) in enumerate(modules):
@@ -394,8 +532,8 @@ def create_deck():
         col_idx = i % 3
         c_left = Inches(0.8 + col_idx * 3.95)
         c_top = Inches(1.8 + row * 2.55)
-        add_card(s6, c_left, c_top, Inches(3.8), Inches(2.35), stripe_color=col)
-        box = s6.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.2), Inches(3.4), Inches(1.95))
+        add_card(s9, c_left, c_top, Inches(3.8), Inches(2.35), stripe_color=col)
+        box = s9.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.2), Inches(3.4), Inches(1.95))
         tf = box.text_frame
         tf.word_wrap = True
 
@@ -412,13 +550,12 @@ def create_deck():
         pd.font.color.rgb = TEXT_MUTED
 
     # ==========================================
-    # SLIDE 7: Database & System Design
+    # SLIDE 10: Database & System Design
     # ==========================================
-    s7 = prs.slides.add_slide(blank_layout)
-    apply_background(s7)
-    add_header(s7, "Database & System Design (ACID SQLite Persistence)")
+    s10 = prs.slides.add_slide(blank_layout)
+    apply_background(s10)
+    add_header(s10, "Database & System Design (ACID SQLite Persistence)")
 
-    # Left: Database Tables
     tables = [
         ("TABLE: users", "id (PK), username (UNIQUE), password, role, full_name, department, created_at", ACCENT_BLUE),
         ("TABLE: quizzes", "id (PK), join_code (UNIQUE), teacher_name, title, category, duration_minutes, passing_score, tags, questions_json, created_at", ACCENT_GREEN),
@@ -427,8 +564,8 @@ def create_deck():
 
     for i, (t_name, t_schema, col) in enumerate(tables):
         top_pos = Inches(1.8 + i * 1.65)
-        add_card(s7, Inches(0.8), top_pos, Inches(6.8), Inches(1.5), stripe_color=col)
-        box = s7.shapes.add_textbox(Inches(1.0), top_pos + Inches(0.15), Inches(6.4), Inches(1.2))
+        add_card(s10, Inches(0.8), top_pos, Inches(6.8), Inches(1.5), stripe_color=col)
+        box = s10.shapes.add_textbox(Inches(1.0), top_pos + Inches(0.15), Inches(6.4), Inches(1.2))
         tf = box.text_frame
         tf.word_wrap = True
 
@@ -444,9 +581,8 @@ def create_deck():
         ps.font.size = Pt(9)
         ps.font.color.rgb = TEXT_LIGHT
 
-    # Right: Architectural Highlights
-    add_card(s7, Inches(7.8), Inches(1.8), Inches(4.7), Inches(4.8), stripe_color=ACCENT_AMBER)
-    r_box = s7.shapes.add_textbox(Inches(8.0), Inches(2.0), Inches(4.3), Inches(4.4))
+    add_card(s10, Inches(7.8), Inches(1.8), Inches(4.7), Inches(4.8), stripe_color=ACCENT_AMBER)
+    r_box = s10.shapes.add_textbox(Inches(8.0), Inches(2.0), Inches(4.3), Inches(4.4))
     tf_r = r_box.text_frame
     tf_r.word_wrap = True
 
@@ -472,49 +608,11 @@ def create_deck():
         ph.space_before = Pt(5)
 
     # ==========================================
-    # SLIDE 8: Initial UI & System Workflow
+    # SLIDE 11: CRUD Operations Matrix
     # ==========================================
-    s8 = prs.slides.add_slide(blank_layout)
-    apply_background(s8)
-    add_header(s8, "Initial UI & End-to-End System Workflow")
-
-    steps = [
-        ("1. AUTHENTICATE", "User logs in as Student, Faculty, or Admin. Navigation immediately configures role-specific view.", ACCENT_BLUE),
-        ("2. CREATE QUIZ", "Faculty designs quiz manually or triggers AI Generator. Server assigns unique Join Code (e.g. QZ-4821).", ACCENT_GREEN),
-        ("3. ENTER CODE", "Student inputs 6-char Join Code. Assessment metadata and questions load into Candidate Arena in <25ms.", ACCENT_AMBER),
-        ("4. TAKE & MONITOR", "Countdown timer runs authoritatively. Client anti-cheat monitors focus and logs tab blurs.", RGBColor(239, 68, 68)),
-        ("5. AUTO-GRADE", "Candidate submits test. Server auto-grades in ~25ms and presents detailed scorecard with answer rationale.", ACCENT_PURPLE),
-        ("6. AUDIT & EXPORT", "Teacher inspects class gradebook. Admin analyzes platform telemetry and streams roster & attempt CSVs.", RGBColor(14, 165, 233))
-    ]
-
-    for i, (s_title, s_desc, col) in enumerate(steps):
-        row = i // 3
-        col_idx = i % 3
-        c_left = Inches(0.8 + col_idx * 3.95)
-        c_top = Inches(1.8 + row * 2.55)
-        add_card(s8, c_left, c_top, Inches(3.8), Inches(2.35), stripe_color=col)
-        box = s8.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.2), Inches(3.4), Inches(1.95))
-        tf = box.text_frame
-        tf.word_wrap = True
-
-        p = tf.paragraphs[0]
-        p.text = s_title
-        p.font.size = Pt(11)
-        p.font.bold = True
-        p.font.color.rgb = col
-        p.space_after = Pt(6)
-
-        pd = tf.add_paragraph()
-        pd.text = s_desc
-        pd.font.size = Pt(10)
-        pd.font.color.rgb = TEXT_MUTED
-
-    # ==========================================
-    # SLIDE 9: CRUD Operations Matrix
-    # ==========================================
-    s9 = prs.slides.add_slide(blank_layout)
-    apply_background(s9)
-    add_header(s9, "CRUD Operations Aligned with Quality Goals")
+    s11 = prs.slides.add_slide(blank_layout)
+    apply_background(s11)
+    add_header(s11, "CRUD Operations Aligned with Quality Goals")
 
     cruds = [
         ("USER MANAGEMENT", ACCENT_BLUE, [
@@ -548,8 +646,8 @@ def create_deck():
         col_idx = i % 2
         c_left = Inches(0.8 + col_idx * 5.95)
         c_top = Inches(1.8 + row * 2.55)
-        add_card(s9, c_left, c_top, Inches(5.7), Inches(2.35), stripe_color=col)
-        box = s9.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(5.3), Inches(2.0))
+        add_card(s11, c_left, c_top, Inches(5.7), Inches(2.35), stripe_color=col)
+        box = s11.shapes.add_textbox(c_left + Inches(0.2), c_top + Inches(0.15), Inches(5.3), Inches(2.0))
         tf = box.text_frame
         tf.word_wrap = True
 
@@ -568,81 +666,138 @@ def create_deck():
             po.space_before = Pt(2)
 
     # ==========================================
-    # SLIDE 10: Working Demo & Live Execution
+    # SLIDE 12: Working App Demo Guide — Setup & Credentials
     # ==========================================
-    s10 = prs.slides.add_slide(blank_layout)
-    apply_background(s10)
-    add_header(s10, "Working Application & Live Demonstration Plan")
+    s12 = prs.slides.add_slide(blank_layout)
+    apply_background(s12)
+    add_header(s12, "Working Application Demo Guide — Setup & Test Credentials")
 
-    # Left: Web App
-    add_card(s10, Inches(0.8), Inches(1.8), Inches(5.6), Inches(4.9), stripe_color=ACCENT_BLUE)
-    box_w = s10.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.2), Inches(4.5))
-    tf_w = box_w.text_frame
-    tf_w.word_wrap = True
+    # Left: Startup Commands
+    add_card(s12, Inches(0.8), Inches(1.8), Inches(5.6), Inches(4.9), stripe_color=ACCENT_BLUE)
+    box_s12l = s12.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(5.2), Inches(4.5))
+    tf_s12l = box_s12l.text_frame
+    tf_s12l.word_wrap = True
 
-    p = tf_w.paragraphs[0]
-    p.text = "WEB APPLICATION DEMONSTRATION"
+    p = tf_s12l.paragraphs[0]
+    p.text = "EXECUTION & VERIFICATION COMMANDS"
     p.font.size = Pt(12)
     p.font.bold = True
     p.font.color.rgb = ACCENT_BLUE
-    p.space_after = Pt(8)
+    p.space_after = Pt(10)
 
-    w_points = [
-        ("Command to Start", "python server.py (Runs on http://localhost:8000)"),
-        ("Live Student Workflow", "Sign in as 'student' / 'student123' -> Enter Join Code 'QZ-1001' -> Complete assessment -> Demonstrate anti-cheat alert -> Receive instant scorecard."),
-        ("Live Faculty Workflow", "Sign in as 'faculty' / 'faculty123' -> Create quiz with AI Question Generator -> Copy Join Code -> View class gradebook with submitted candidate results."),
-        ("Live Admin Workflow", "Sign in as 'admin' / 'admin123' -> Inspect platform telemetry KPIs -> Open candidate scorecard modal -> Download Roster & Submissions CSV.")
+    exec_cmds = [
+        ("1. Launch Web Server", "python server.py\nBinds to http://localhost:8000 with real-time reload & lifespan initialization."),
+        ("2. Launch Desktop GUI", "python desktop_app.py\nNative Windows CustomTkinter application with strict grid alignment."),
+        ("3. Run Test Suite", "python -m pytest tests/ -v\nRuns all 22 automated tests verifying auth, join codes, and admin analytics.")
     ]
-    for wt, wd in w_points:
-        pw = tf_w.add_paragraph()
-        pw.text = f"• {wt}:"
-        pw.font.bold = True
-        pw.font.size = Pt(10)
-        pw.font.color.rgb = TEXT_LIGHT
-        pw.space_before = Pt(4)
-        pvd = tf_w.add_paragraph()
-        pvd.text = f"  {wd}"
-        pvd.font.size = Pt(9)
-        pvd.font.color.rgb = TEXT_MUTED
+    for c_title, c_desc in exec_cmds:
+        pc = tf_s12l.add_paragraph()
+        pc.text = f"▶ {c_title}:"
+        pc.font.bold = True
+        pc.font.size = Pt(10.5)
+        pc.font.color.rgb = TEXT_LIGHT
+        pc.space_before = Pt(6)
 
-    # Right: Desktop App
-    add_card(s10, Inches(6.8), Inches(1.8), Inches(5.7), Inches(4.9), stripe_color=ACCENT_GREEN)
-    box_d = s10.shapes.add_textbox(Inches(7.0), Inches(2.0), Inches(5.3), Inches(4.5))
-    tf_d = box_d.text_frame
-    tf_d.word_wrap = True
+        pcd = tf_s12l.add_paragraph()
+        pcd.text = f"   {c_desc}"
+        pcd.font.size = Pt(9.5)
+        pcd.font.color.rgb = TEXT_MUTED
 
-    p = tf_d.paragraphs[0]
-    p.text = "DESKTOP APPLICATION DEMONSTRATION"
+    # Right: Test Accounts Table
+    add_card(s12, Inches(6.8), Inches(1.8), Inches(5.7), Inches(4.9), stripe_color=ACCENT_GREEN)
+    box_s12r = s12.shapes.add_textbox(Inches(7.0), Inches(2.0), Inches(5.3), Inches(4.5))
+    tf_s12r = box_s12r.text_frame
+    tf_s12r.word_wrap = True
+
+    p = tf_s12r.paragraphs[0]
+    p.text = "READY-TO-USE TEST ACCOUNTS"
     p.font.size = Pt(12)
     p.font.bold = True
     p.font.color.rgb = ACCENT_GREEN
-    p.space_after = Pt(8)
+    p.space_after = Pt(10)
 
-    d_points = [
-        ("Command to Start", "python desktop_app.py (Native Windows Standalone GUI)"),
-        ("Desktop Authentication", "Native authentication dialog supporting Student, Faculty, and Admin sign-in with instant role-specific tab adaptation."),
-        ("Strict Grid Table Layout", "Pixel-perfect 44px rows with zero vertical detachment; aligned columns for User ID, Name, Role, Quizzes, Avg Score, Pass Rate, Flags."),
-        ("Theme & Accessibility", "Toggle between Warm Cream Mode and High-Contrast Dark Mode; dynamic font scaling buttons (A+/A-) and Focus Mode."),
-        ("Test Suite Verification", "python -m pytest tests/ (All 22 unit tests passing).")
+    accounts = [
+        ("STUDENT ROLE", "student", "student123", "Alex Mercer", "Candidate Arena: Join assessment via code 'QZ-1001', test anti-cheat, instant scorecard.", ACCENT_BLUE),
+        ("FACULTY ROLE", "faculty", "faculty123", "Prof. Alan Turing", "Examiner Studio: Manual quiz builder, AI quiz generator, class submission gradebook.", ACCENT_GREEN),
+        ("ADMIN ROLE", "admin", "admin123", "System Administrator", "Platform Admin: Global telemetry KPIs, candidate history modal, and CSV exports.", ACCENT_PURPLE)
     ]
-    for dt, dd in d_points:
-        pd = tf_d.add_paragraph()
-        pd.text = f"• {dt}:"
-        pd.font.bold = True
-        pd.font.size = Pt(10)
-        pd.font.color.rgb = TEXT_LIGHT
-        pd.space_before = Pt(4)
-        pdd = tf_d.add_paragraph()
-        pdd.text = f"  {dd}"
-        pdd.font.size = Pt(9)
-        pdd.font.color.rgb = TEXT_MUTED
+    for role_h, uname, pwd, name, desc, col in accounts:
+        pa = tf_s12r.add_paragraph()
+        pa.text = f"👤 {role_h} — {name} ({col.rgb if hasattr(col, 'rgb') else ''})"
+        pa.font.bold = True
+        pa.font.size = Pt(10)
+        pa.font.color.rgb = col
+        pa.space_before = Pt(6)
+
+        pad = tf_s12r.add_paragraph()
+        pad.text = f"   Login: {uname}  |  Password: {pwd}"
+        pad.font.size = Pt(9.5)
+        pad.font.bold = True
+        pad.font.color.rgb = TEXT_LIGHT
+
+        pad2 = tf_s12r.add_paragraph()
+        pad2.text = f"   Purpose: {desc}"
+        pad2.font.size = Pt(9)
+        pad2.font.color.rgb = TEXT_MUTED
 
     # ==========================================
-    # SLIDE 11: Summary & Conclusion
+    # SLIDE 13: Live Demonstration Workflows
     # ==========================================
-    s11 = prs.slides.add_slide(blank_layout)
-    apply_background(s11)
-    add_header(s11, "Review 1 Deliverables Summary & Next Steps")
+    s13 = prs.slides.add_slide(blank_layout)
+    apply_background(s13)
+    add_header(s13, "Live Demonstration Walkthroughs (Student, Faculty, Admin)")
+
+    flows = [
+        ("SCENARIO 1: STUDENT EXAMINATION", ACCENT_BLUE, [
+            "1. Sign in as student / student123; navigation tabs restrict to Candidate Arena",
+            "2. Enter active Join Code 'QZ-1001' and launch assessment",
+            "3. Answer questions while authoritative countdown timer runs",
+            "4. Switch browser tabs to trigger live Anti-Cheat violation alert",
+            "5. Submit test; zero-latency auto-grading delivers scorecard in ~25ms"
+        ]),
+        ("SCENARIO 2: FACULTY STUDIO & AI", ACCENT_GREEN, [
+            "1. Sign in as faculty / faculty123; Examiner Studio is front and center",
+            "2. Open AI Question Generator, enter topic 'Data Structures', click Generate",
+            "3. Set passing score to 70%, 15m duration, click Publish Quiz",
+            "4. System creates new 6-char Join Code (e.g. QZ-3942)",
+            "5. Open Class Gradebook to inspect student attempts and proctor violation counts"
+        ]),
+        ("SCENARIO 3: ADMIN GOVERNANCE", ACCENT_PURPLE, [
+            "1. Sign in as admin / admin123; open Platform Administration Console",
+            "2. Inspect high-level KPIs (Total accounts, candidates, faculty, violations)",
+            "3. Filter user roster table by role or search string 'Alex Mercer'",
+            "4. Click 'View Report' on candidate to open historical performance modal",
+            "5. Click 'Export Roster CSV' & 'Export Submissions CSV' for audit reports"
+        ])
+    ]
+
+    for i, (title, col, steps) in enumerate(flows):
+        c_left = Inches(0.8 + i * 3.95)
+        add_card(s13, c_left, Inches(1.8), Inches(3.8), Inches(4.9), stripe_color=col)
+        box = s13.shapes.add_textbox(c_left + Inches(0.2), Inches(2.0), Inches(3.4), Inches(4.5))
+        tf = box.text_frame
+        tf.word_wrap = True
+
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = col
+        p.space_after = Pt(10)
+
+        for step in steps:
+            ps = tf.add_paragraph()
+            ps.text = step
+            ps.font.size = Pt(9.5)
+            ps.font.color.rgb = TEXT_LIGHT
+            ps.space_before = Pt(5)
+
+    # ==========================================
+    # SLIDE 14: Review 1 Deliverables Summary
+    # ==========================================
+    s14 = prs.slides.add_slide(blank_layout)
+    apply_background(s14)
+    add_header(s14, "Review 1 Deliverables Summary & Next Steps")
 
     summ_cards = [
         ("REVIEW 1 DELIVERABLES MET", ACCENT_GREEN, [
@@ -671,8 +826,8 @@ def create_deck():
 
     for i, (title, col, pts) in enumerate(summ_cards):
         c_left = Inches(0.8 + i * 3.95)
-        add_card(s11, c_left, Inches(1.8), Inches(3.8), Inches(4.9), stripe_color=col)
-        box = s11.shapes.add_textbox(c_left + Inches(0.2), Inches(2.0), Inches(3.4), Inches(4.5))
+        add_card(s14, c_left, Inches(1.8), Inches(3.8), Inches(4.9), stripe_color=col)
+        box = s14.shapes.add_textbox(c_left + Inches(0.2), Inches(2.0), Inches(3.4), Inches(4.5))
         tf = box.text_frame
         tf.word_wrap = True
 
