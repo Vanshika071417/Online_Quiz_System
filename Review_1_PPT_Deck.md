@@ -1,9 +1,8 @@
 # Compact Master Presentation Deck & Viva Guide (17 Slides)
 ## Online Quiz System (QuizSphere Pro) — Review 1 & Review 2: Process + Quality
 
-**Generated PowerPoint Files (Ready to Present):**
-- Primary 17-Slide Presentation: [`QuizSphere_Review_Presentation.pptx`](file:///c:/Users/piyush/Documents/Online_Quiz_System/QuizSphere_Review_Presentation.pptx)
-- Alternate Copy: [`QuizSphere_Review_1_Presentation.pptx`](file:///c:/Users/piyush/Documents/Online_Quiz_System/QuizSphere_Review_1_Presentation.pptx)
+**Final PowerPoint Presentation:**
+- Official 17-Slide Presentation: [`QuizSphere_Review_Presentation.pptx`](file:///c:/Users/piyush/Documents/Online_Quiz_System/QuizSphere_Review_Presentation.pptx)
 
 **Academic Course Details:**
 - **Course:** BBAT104: Fundamentals of Total Quality Management (TQM)
